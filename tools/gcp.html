@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محاسبه‌گر GCP و Check Point</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--res:#eaf2fd;--g:#d92d20;--k:#1d6fe0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e;--g:#f97066;--k:#5b9bf5}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e;--g:#f97066;--k:#5b9bf5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 14px}
+h2{font-size:1rem;margin:0 0 8px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+select,input[type=number]{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+.r{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.n{font-size:.8rem;color:var(--mut);margin-top:6px}
+.chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:.95rem}
+.chk input{width:20px;height:20px}
+.res{background:var(--res);border-color:var(--ac)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
+.g div{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px}
+.g b{display:block;font-size:1.3rem;direction:ltr}
+.g span{font-size:.78rem;color:var(--mut)}
+ul{margin:10px 0 0;padding-inline-start:20px;font-size:.9rem}
+li{margin-bottom:4px}
+.ok{color:var(--ok)}.wr{color:var(--wr)}.er{color:var(--er)}
+.lg{font-size:.8rem;margin-top:6px;display:flex;gap:14px}
+.lg i{display:inline-block;width:12px;height:12px;vertical-align:middle;margin-inline-end:4px}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>محاسبه‌گر تعداد GCP و Check Point</h1>
+
+<div class="c">
+<h2>۱) پهپاد و روش تعیین موقعیت</h2>
+<label>مدل پهپاد / سامانه</label>
+<select id="model"></select>
+<div class="chk"><input type="checkbox" id="rtk"><label for="rtk" style="margin:0;color:var(--tx)">استفاده از RTK / PPK</label></div>
+<div id="mw" hidden><label>روش</label><select id="meth"><option value="rtk">RTK (تصحیح زنده)</option><option value="ppk">PPK (پردازش پس از پرواز)</option></select></div>
+<div class="n" id="mn"></div>
+</div>
+
+<div class="c">
+<h2>۲) محدوده و دقت</h2>
+<div class="r">
+<div><label>طول محدوده (m)</label><input id="L" type="number" value="1000" min="10"></div>
+<div><label>عرض محدوده (m)</label><input id="W" type="number" value="600" min="10"></div>
+<div><label>GSD (cm/px)</label><input id="gsd" type="number" value="2" step="0.1" min="0.1"></div>
+<div><label>پستی‌وبلندی</label><select id="ter"><option value="1">مسطح</option><option value="0.8">نسبتاً ناهموار</option><option value="0.6">کوهستانی / پرشیب</option></select></div>
+</div>
+<label>سطح دقت مورد نیاز</label>
+<select id="lvl"><option value="500">عمومی (نقشه‌ی کلی، حجم‌گیری ساده)</option><option value="350" selected>دقیق (توپوگرافی، حجم‌گیری)</option><option value="200">بسیار دقیق (کاداستر، مهندسی)</option></select>
+<div class="r">
+<div><label>نمایش چیدمان در نقشه</label><select id="disp"><option value="rec">تعداد پیشنهادی</option><option value="min">تعداد حداقل</option></select></div>
+<div><label>&nbsp;</label><button id="reseed" style="width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);cursor:pointer">چیدمان نامنظم جدید</button></div>
+</div>
+</div>
+
+<div class="c res">
+<h2>نتایج</h2>
+<div class="g">
+<div><span>مساحت</span><b id="oA">—</b></div>
+<div><span>فاصله‌ی متوسط نقاط</span><b id="oS">—</b></div>
+<div><span>GCP پیشنهادی</span><b id="oG">—</b><span id="oGm"></span></div>
+<div><span>Check Point پیشنهادی</span><b id="oK">—</b><span id="oKm"></span></div>
+<div><span>اندازه‌ی هدف پیشنهادی</span><b id="oT">—</b></div>
+<div><span>دقت تقریبی (افقی / ارتفاعی)</span><b id="oAcc">—</b></div>
+</div>
+<div id="map"></div>
+<div class="lg"><span><i style="background:var(--g);border-radius:50%"></i>GCP</span><span><i style="background:var(--k)"></i>Check Point</span></div>
+<ul id="msgs"></ul>
+</div>
+<div class="n">اعداد و دقت‌ها قواعد تجربی و تقریبی‌اند، نه ضمانت. «حداقل» برای پروژه‌های کم‌ریسک یا بودجه‌ی محدود است و «پیشنهادی» تعادل خوبی بین دقت و هزینه می‌دهد. چیدمان نمایش‌داده‌شده یک نمونه‌ی نامنظم برای مستطیل است؛ روی نقشه‌ی واقعی با شکل زمین، دسترسی و شرایط محل تطبیق دهید.</div>
+</div>
+
+<script>
+// name, RTK capability: 0 none, 1 optional module, 2 built-in
+var M=[
+["Mavic 3 / 3 Classic / 3 Pro",0],
+["Mavic 3 Enterprise / Thermal",1],
+["Matrice 4E / 4T",1],
+["Air 3 / Air 2S / Mavic Air 2",0],
+["Mavic 2 Pro / Zoom / Mavic Pro",0],
+["Mini 2 / Mini 3 / Mini 4 Pro / Mini SE",0],
+["Phantom 4 Pro / Advanced / Phantom 3",0],
+["Phantom 4 RTK",2],
+["Inspire 2 (X5S / X7)",0],
+["Matrice 300/350 + Zenmuse P1",2],
+["Matrice 300/350 + Zenmuse L1 / L2",2],
+["سایر / دلخواه",0]
+];
+var $=function(i){return document.getElementById(i)};
+var ms=$("model"),seed=7;
+M.forEach(function(m,i){var o=document.createElement("option");o.value=i;o.textContent=m[0];ms.appendChild(o)});
+function fm(v,d){return v.toFixed(d===undefined?0:d)}
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,r){for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function layoutG(L,W,N,r){
+  var ins=Math.min(L,W)*0.05,P=[],i;
+  var cor=[[ins,ins],[L-ins,ins],[L-ins,W-ins],[ins,W-ins]];
+  function jc(c){var dx=ins*r()*1.5,dy=ins*r()*1.5;return[c[0]+(c[0]<L/2?dx:-dx),c[1]+(c[1]<W/2?dy:-dy)]}
+  if(N<4){P=[jc(cor[0]),jc(cor[1]),[L*(0.35+0.3*r()),W-ins-ins*r()]];return P.slice(0,N)}
+  cor.forEach(function(c){P.push(jc(c))});
+  var rest=N-4,nP=Math.min(rest,Math.max(0,Math.round(N*0.65)-4)),nI=rest-nP;
+  var l=L-2*ins,w=W-2*ins,per=2*(l+w);
+  for(i=0;i<nP;i++){
+    var u=(i+0.5+(r()-0.5)*0.6)/nP*per,d=ins*(0.3+r()*1.7);
+    if(u<l)P.push([ins+u,ins+d]);else{u-=l;if(u<w)P.push([L-ins-d,ins+u]);else{u-=w;if(u<l)P.push([L-ins-u,W-ins-d]);else{u-=l;P.push([ins+d,W-ins-u])}}}
+  }
+  if(nI>0){
+    var m=Math.min(L,W)*0.12,cols=Math.max(1,Math.round(Math.sqrt(nI*L/W))),rows=Math.ceil(nI/cols),cells=[],j;
+    for(i=0;i<cols;i++)for(j=0;j<rows;j++)cells.push([i,j]);
+    shuffle(cells,r).slice(0,nI).forEach(function(c){
+      P.push([m+(c[0]+0.5+(r()-0.5)*0.7)*(L-2*m)/cols,m+(c[1]+0.5+(r()-0.5)*0.7)*(W-2*m)/rows]);
+    });
+  }
+  return P;
+}
+function layoutK(L,W,N,G,r){
+  var ins=Math.min(L,W)*0.06,cols=Math.max(1,Math.round(Math.sqrt(N*L/W))),rows=Math.ceil(N/cols),cells=[],K=[],i,j,t;
+  for(i=0;i<cols;i++)for(j=0;j<rows;j++)cells.push([i,j]);
+  var dmin=0.45*Math.sqrt(L*W/(G.length+N));
+  shuffle(cells,r).slice(0,N).forEach(function(c){
+    var best=null,bd=-1;
+    for(t=0;t<30;t++){
+      var x=ins+(c[0]+r())*(L-2*ins)/cols,y=ins+(c[1]+r())*(W-2*ins)/rows,d=1e12;
+      G.concat(K).forEach(function(p){d=Math.min(d,Math.hypot(p[0]-x,p[1]-y))});
+      if(d>bd){bd=d;best=[x,y]}
+      if(d>=dmin)break;
+    }
+    K.push(best);
+  });
+  return K;
+}
+function calc(){
+  var L=+$("L").value,W=+$("W").value,gsd=+$("gsd").value,tf=+$("ter").value,s0=+$("lvl").value;
+  var rtk=$("rtk").checked,cap=M[ms.value][1],meth=$("meth").value,disp=$("disp").value;
+  $("mw").hidden=!rtk;
+  if(!(L>0&&W>0&&gsd>0))return;
+  var s=Math.min(s0*tf*(rtk?2.5:1),800),A=L*W;
+  var minG=rtk?3:5,minK=3;
+  var recG=Math.max(Math.ceil(A/(s*s))+4,minG+1);
+  var asp=Math.max(L/W,W/L);
+  if(asp>5)recG=Math.max(recG,2*Math.ceil(Math.max(L,W)/(1.5*s))+2);
+  var recK=rtk?Math.max(4,Math.round(recG*0.6)):Math.max(minK+1,Math.round(recG*0.35));
+  var nG=disp==="min"?minG:recG,nK=disp==="min"?minK:recK;
+  var G=layoutG(L,W,nG,rng(seed)),K=layoutK(L,W,nK,G,rng(seed+99));
+  var tmin=Math.max(10,Math.round(5*gsd)),trec=Math.max(20,Math.round(10*gsd));
+  var h,v;
+  if(rtk){h=Math.max(1*gsd,2);v=Math.max(2*gsd,3)}else{h=1.5*gsd;v=2.5*gsd}
+  $("oA").textContent=fm(A/10000,1)+" ha";
+  $("oS").textContent="~"+fm(Math.sqrt(A/recG))+" m";
+  $("oG").textContent=recG;$("oGm").textContent="حداقل: "+minG;
+  $("oK").textContent=recK;$("oKm").textContent="حداقل: "+minK;
+  $("oT").textContent=trec+" cm";
+  $("oAcc").textContent=fm(h,1)+" / "+fm(v,1)+" cm";
+  var m=Math.max(L,W),pad=m*0.04,r=m/70;
+  var svg='<svg viewBox="'+(-pad)+' '+(-pad)+' '+(L+2*pad)+' '+(W+2*pad)+'" style="width:100%;max-height:300px;margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:10px"><rect x="0" y="0" width="'+L+'" height="'+W+'" style="fill:var(--card);stroke:var(--mut);stroke-width:'+(m/400)+'"/>';
+  K.forEach(function(p){svg+='<rect x="'+(p[0]-r*0.8).toFixed(1)+'" y="'+(W-p[1]-r*0.8).toFixed(1)+'" width="'+(r*1.6).toFixed(1)+'" height="'+(r*1.6).toFixed(1)+'" style="fill:var(--k)"/>'});
+  G.forEach(function(p){svg+='<circle cx="'+p[0].toFixed(1)+'" cy="'+(W-p[1]).toFixed(1)+'" r="'+r.toFixed(1)+'" style="fill:var(--g)"/>'});
+  $("map").innerHTML=svg+"</svg>";
+  var t=[];
+  t.push('<li><b>تعداد:</b> حداقل '+minG+' GCP و '+minK+' Check Point؛ پیشنهادی '+recG+' GCP و '+recK+' Check Point. نقشه‌ی بالا چیدمان '+(disp==="min"?"حداقل":"پیشنهادی")+' را نشان می‌دهد.</li>');
+  if(rtk&&cap===0)t.push('<li class="wr">این مدل ماژول RTK داخلی ندارد. برای RTK/PPK به گیرنده‌ی GNSS خارجی یا سامانه‌ی سازگار نیاز دارید؛ در غیر این صورت به GCP تکیه کنید و تیک را بردارید.</li>');
+  if(!rtk&&cap>0)t.push('<li class="ok">این مدل از RTK پشتیبانی می‌کند؛ با فعال کردن RTK/PPK تعداد GCP کمتر می‌شود و بیشتر آن‌ها نقش کنترل دارند.</li>');
+  if(rtk&&cap>0)t.push('<li class="ok">با RTK/PPK، GCPها بیشتر برای کنترل و تثبیت مختصات‌اند؛ باز هم ۳ تا ۵ نقطه‌ی زمینی لازم است.</li>');
+  t.push('<li><b>جای GCP:</b> چهار گوشه را (حدود ۵–۱۰٪ داخل مرز) پوشش دهید، بقیه را <b>نامنظم و با فاصله‌های متفاوت</b> در محیط و داخل پخش کنید تا هندسه‌ی شبکه تقویت شود. هیچ سه نقطه‌ای روی یک خط مستقیم نباشد و در یک گوشه یا ناحیه خوشه نشوند.</li>');
+  if(tf<1)t.push('<li><b>پستی‌وبلندی:</b> حتماً روی بلندترین و پایین‌ترین نقاط و در تغییر شیب‌های اصلی GCP بگذارید؛ نقاط را در ارتفاع‌های مختلف پخش کنید.</li>');
+  else t.push('<li><b>ارتفاع:</b> حتی در زمین مسطح، یک نقطه در پایین‌ترین و یک نقطه در بالاترین ارتفاع محدوده داشته باشید.</li>');
+  if(asp>5)t.push('<li><b>محدوده‌ی باریک (کریدور):</b> GCPها را در طول مسیر به‌صورت جفت‌های دوطرفه با جابه‌جایی نامنظم و در فاصله‌ی حدود '+fm(1.5*s)+' متر قرار دهید.</li>');
+  t.push('<li><b>جای Check Point:</b> مستقل از GCP و نامنظم، بیشتر در فاصله‌ی میان GCPها و داخل محدوده (نه کنار هم و نه کنار GCP)؛ در تعدیل استفاده نشوند و فقط برای ارزیابی دقت به‌کار روند.</li>');
+  if(recK<20)t.push('<li class="wr">برای گزارش رسمی دقت (مثلاً مطابق ASPRS) معمولاً حداقل ۲۰ Check Point لازم است؛ تعداد فعلی برای کنترل عملی کافی است.</li>');
+  t.push('<li><b>اندازه و جنس هدف:</b> حدود '+trec+' cm (حداقل '+tmin+' cm، یعنی دست‌کم ۵ پیکسل)، با الگوی چهارربعی سیاه‌وسفید با کنتراست بالا روی زمین صاف.</li>');
+  t.push('<li><b>پرهیز از:</b> زیر درخت یا سایه‌ی تیز، سطوح براق، شیب تند یا محل‌های پرتردد؛ هر نقطه باید در چندین عکس (ترجیحاً بیش از ۵) دیده شود.</li>');
+  t.push('<li><b>برداشت مختصات:</b> با GNSS در حالت Fix (RTK یا ایستا)، چند دقیقه میانگین‌گیری و ثبت ارتفاع هندسی/ژئوئید؛ همه‌ی نقاط در یک سیستم مختصات و ارتفاعی باشند.</li>');
+  if(rtk){
+    if(meth==="ppk")t.push('<li><b>PPK:</b> ایستگاه مبنا باید قبل و بعد پرواز و در تمام طول ماموریت لاگ ثبت کند و موقعیتش دقیق باشد؛ لاگ‌های پهپاد و مبنا را نگه دارید.</li>');
+    else t.push('<li><b>RTK:</b> در طول پرواز وضعیت Fix را کنترل کنید؛ بخش‌هایی که Float شده‌اند را دوباره پرواز دهید یا با GCP تقویت کنید.</li>');
+  }else{
+    t.push('<li class="wr">بدون RTK/PPK، دقت مطلق تماماً به GCPها وابسته است؛ از تعداد حداقل فقط برای پروژه‌های کم‌ریسک استفاده کنید.</li>');
+  }
+  $("msgs").innerHTML=t.join("");
+}
+["L","W","gsd","ter","lvl","rtk","meth","model","disp"].forEach(function(i){$(i).addEventListener("input",calc);$(i).addEventListener("change",calc)});
+$("reseed").addEventListener("click",function(){seed+=1;calc()});
+calc();
+</script>
+</body>
+</html>

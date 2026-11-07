@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ماشین‌حساب ISO و شاتر پهپاد DJI</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--res:#eaf2fd}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 14px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+label:first-child{margin-top:0}
+select,input{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+.r{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.n{font-size:.8rem;color:var(--mut);margin-top:6px}
+.res{background:var(--res);border-color:var(--ac)}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center}
+.big div{background:var(--card);border-radius:12px;padding:10px;border:1px solid var(--bd)}
+.big b{display:block;font-size:1.6rem;direction:ltr}
+.big span{font-size:.8rem;color:var(--mut)}
+ul{margin:10px 0 0;padding-inline-start:20px;font-size:.9rem}
+.ok{color:var(--ok)}.wr{color:var(--wr)}.er{color:var(--er)}
+.d{direction:ltr;unicode-bidi:embed}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>ماشین‌حساب ISO و شاتر پهپاد DJI (فتوگرامتری)</h1>
+
+<div class="c">
+<label>مدل پهپاد / دوربین</label>
+<select id="model"></select>
+<div class="n" id="minfo"></div>
+<div id="apWrap"><label>دیافراگم (f)</label><select id="ap"></select></div>
+<div id="custom" hidden>
+<div class="r"><div><label>دیافراگم f/</label><input id="cN" type="number" step="0.1" value="2.8"></div>
+<div><label>حداکثر ISO</label><input id="cI" type="number" step="100" value="6400"></div></div>
+</div>
+</div>
+
+<div class="c">
+<label>شرایط نور (انتخاب سریع)</label>
+<select id="preset">
+<option value="">— دلخواه —</option>
+<option value="100000">آفتاب مستقیم (۱۰۰٬۰۰۰)</option>
+<option value="50000">آفتاب با ابر کم (۵۰٬۰۰۰)</option>
+<option value="15000">ابری (۱۵٬۰۰۰)</option>
+<option value="3500">ابری سنگین (۳٬۵۰۰)</option>
+<option value="750">سایه / غروب (۷۵۰)</option>
+</select>
+<label>شدت نور از سنسور گوشی (لوکس)</label>
+<input id="lux" type="number" inputmode="decimal" value="20000" min="1">
+<div class="r">
+<div><label>سرعت پرواز (m/s)</label><input id="spd" type="number" inputmode="decimal" value="6" step="0.5" min="0.1"></div>
+<div><label>GSD (cm/px)</label><input id="gsd" type="number" inputmode="decimal" value="2" step="0.1" min="0.1"></div>
+</div>
+<div class="r">
+<div><label>جبران نمایش (EV)</label><input id="comp" type="number" inputmode="decimal" value="0" step="0.3"></div>
+<div><label>حداکثر تاری مجاز (پیکسل)</label><input id="blur" type="number" inputmode="decimal" value="0.5" step="0.1" min="0.1" disabled><div class="n"><input type="checkbox" id="auto" checked style="width:auto;vertical-align:middle"> خودکار از روی GSD (۰٫۵ پیکسل)</div></div>
+</div>
+</div>
+
+<div class="c res">
+<div class="big">
+<div><span>ISO پیشنهادی</span><b id="oIso">—</b></div>
+<div><span>سرعت شاتر</span><b id="oSh">—</b></div>
+</div>
+<div class="n">EV تقریبی (ISO 100): <span id="oEv" class="d"></span> · تاری حرکت: <span id="oBl" class="d"></span> px</div>
+<div class="n">حداکثر جابه‌جایی مجاز بر اساس GSD: <span id="oDm" class="d"></span> cm · شاتر لازم: <span id="oTm" class="d"></span> یا سریع‌تر</div>
+<ul id="msgs"></ul>
+</div>
+
+<div class="n">مقادیر دیافراگم و ISO مدل‌ها تقریبی‌اند؛ با گزینه «دلخواه» می‌توانید مقدار دقیق دوربین خودتان را وارد کنید. سنسور نور گوشی دقت پایینی دارد؛ پس از اولین عکس تست، هیستوگرام را بررسی و ±۱ استاپ اصلاح کنید.</div>
+</div>
+
+<script>
+// name, apertures list (first = default), maxISO
+var M=[
+["Mavic 3 / 3 Classic (دوربین Hasselblad)",[2.8,3.5,4,5.6,8,11],6400],
+["Mavic 3 Pro (دوربین اصلی)",[2.8,3.5,4,5.6,8,11],6400],
+["Mavic 3 Enterprise / Thermal (RGB)",[2.8,3.5,4,5.6,8,11],6400],
+["Air 3 (واید)",[1.7],6400],
+["Air 3 (تله)",[2.8],6400],
+["Air 2S",[2.8],6400],
+["Mavic Air 2",[2.8],6400],
+["Mavic Air",[2.8],1600],
+["Mavic 2 Pro",[2.8,4,5.6,8,11],3200],
+["Mavic 2 Zoom",[2.8],3200],
+["Mavic Pro",[2.2],1600],
+["Mini 4 Pro",[1.7],6400],
+["Mini 3 / Mini 3 Pro",[1.7],6400],
+["Mini 2 / Mini 2 SE / Mini SE",[2.8],3200],
+["Phantom 4 Pro / Pro V2",[2.8,4,5.6,8,11],3200],
+["Phantom 4 RTK",[2.8,4,5.6,8,11],3200],
+["Matrice 300/350 + Zenmuse P1",[2.8,4,5.6,8,11,16],25600],
+["دلخواه (وارد کردن دستی)",[2.8],6400]
+];
+var SH=[8000,6400,5000,4000,3200,2500,2000,1600,1250,1000,800,640,500,400,320,250,200,160,125,100,80,60,50,40,30];
+var $=function(i){return document.getElementById(i)};
+var ms=$("model");
+M.forEach(function(m,i){var o=document.createElement("option");o.value=i;o.textContent=m[0];ms.appendChild(o)});
+
+function fillAp(){
+  var m=M[ms.value],cu=ms.value==M.length-1;
+  $("custom").hidden=!cu;
+  $("apWrap").hidden=cu||m[1].length<2;
+  $("ap").innerHTML=m[1].map(function(a){return "<option>"+a+"</option>"}).join("");
+  $("minfo").textContent=cu?"":"دیافراگم: f/"+m[1][0]+(m[1].length>1?" تا f/"+m[1][m[1].length-1]:" (ثابت)")+" · حداکثر ISO: "+m[2];
+  calc();
+}
+function nearest(t){var best=SH[0],d=1e9;SH.forEach(function(s){var x=Math.abs(Math.log2(s)-Math.log2(1/t));if(x<d){d=x;best=s}});return best}
+function calc(){
+  var cu=ms.value==M.length-1,m=M[ms.value];
+  var N=cu?+$("cN").value:+$("ap").value||m[1][0];
+  var maxI=cu?+$("cI").value:m[2];
+  var lux=+$("lux").value,spd=+$("spd").value,gsd=+$("gsd").value/100,comp=+$("comp").value,bl=+$("blur").value;
+  var auto=$("auto").checked;$("blur").disabled=auto;if(auto){bl=0.5;$("blur").value=bl}
+  if(!(lux>0&&N>0&&spd>0&&gsd>0)){return}
+  var ev=Math.log2(lux/2.5)+comp;
+  var tmax=bl*gsd/spd;
+  var iso=100,t,msgs=[];
+  for(;;){t=N*N/(Math.pow(2,ev)*iso/100);if(t<=tmax||iso*2>maxI)break;iso*=2}
+  var nd=0;
+  if(t<1/8000){nd=Math.log2((1/8000)/t);t=1/8000}
+  var s=nearest(t);
+  var real=1/s;
+  var blurPx=spd*real/gsd;
+  if(nd>0.3){var k=Math.ceil(nd-0.15);var nm={1:"ND2",2:"ND4",3:"ND8",4:"ND16",5:"ND32",6:"ND64"}[Math.min(k,6)]||"ND64";
+    msgs.push('<li class="wr">نور زیاد است؛ حتی با شاتر ۱/۸۰۰۰ حدود '+nd.toFixed(1)+' استاپ اضافه‌نوردهی می‌شود. از فیلتر <b>'+nm+'</b> استفاده کنید (یا دیافراگم را ببندید اگر مدل اجازه می‌دهد).</li>')}
+  if(t>tmax*1.01){var ms2=bl*gsd/t;
+    msgs.push('<li class="er">حتی با بیشینه ISO، شاتر کندتر از حد لازم برای تاری '+bl+' پیکسل است. سرعت پرواز را به حداکثر <b>'+ms2.toFixed(1)+' m/s</b> برسانید یا ارتفاع (GSD) را بیشتر کنید.</li>')}
+  else if(iso<=400&&nd<=0.3){msgs.push('<li class="ok">شرایط خوب است؛ نویز کم و تاری حرکت در حد مجاز.</li>')}
+  if(iso>=1600&&iso<=maxI){msgs.push('<li class="wr">ISO بالا نویز را زیاد می‌کند و ممکن است دقت تطبیق نقاط در فتوگرامتری کم شود.</li>')}
+  if(lux<1000){msgs.push('<li class="wr">نور خیلی کم است؛ برای فتوگرامتری بهتر است پرواز را به زمان روشن‌تر موکول کنید.</li>')}
+  msgs.push('<li>برای نتیجه بهتر: تعادل سفیدی دستی، فوکوس قفل‌شده و در صورت امکان فرمت RAW.</li>');
+  $("oIso").textContent=iso;
+  $("oSh").textContent="1/"+s;
+  $("oEv").textContent=ev.toFixed(1);
+  $("oBl").textContent=blurPx.toFixed(2);
+  $("oDm").textContent=(bl*gsd*100).toFixed(2);
+  $("oTm").textContent="1/"+Math.round(spd/(bl*gsd));
+  $("msgs").innerHTML=msgs.join("");
+}
+ms.addEventListener("change",fillAp);
+["ap","lux","spd","gsd","comp","blur","cN","cI","auto"].forEach(function(i){$(i).addEventListener("input",calc)});
+$("preset").addEventListener("change",function(){if(this.value){$("lux").value=this.value;calc()}});
+fillAp();
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>چک‌لیست مراحل پردازش در Metashape</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--fb:#7a3cc9;--cd:#eef1f5}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--fb:#b794f4;--cd:#272c34}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--fb:#b794f4;--cd:#272c34}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:680px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 12px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0}
+.bar{height:10px;background:var(--bd);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+.st{display:flex;justify-content:space-between;font-size:.85rem;margin-top:4px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin-bottom:12px}
+details.c>summary{cursor:pointer;font-weight:700;font-size:1rem;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.c>summary span{font-size:.8rem;color:var(--mut);font-weight:400;white-space:nowrap}
+.it{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--bd);cursor:pointer}
+.it input{width:22px;height:22px;margin-top:3px;flex:none;accent-color:var(--ok)}
+.it.done .t{color:var(--mut);text-decoration:line-through}
+.t b{font-weight:600}
+.p{display:block;direction:ltr;text-align:left;font-family:ui-monospace,Consolas,monospace;font-size:.78rem;background:var(--cd);border-radius:6px;padding:2px 8px;margin:4px 0;color:var(--tx);unicode-bidi:embed}
+.nt{display:block;font-size:.85rem;color:var(--mut)}
+.k,.f{font-size:.7rem;border-radius:6px;padding:0 6px;margin-inline-start:6px;border:1px solid;white-space:nowrap}
+.k{color:var(--er)}.f{color:var(--fb)}
+.opt{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:.9rem}
+.opt label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.opt input{width:18px;height:18px}
+input[type=text]{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+.btns{display:flex;gap:10px;margin:12px 0}
+button{flex:1;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+button.pr{background:var(--ac);color:#fff;border-color:var(--ac)}
+.n{font-size:.8rem;color:var(--mut)}
+@media print{.top,.btns,.opt{display:none}details:not([open])>*{display:block}body{background:#fff;color:#000}.c{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>چک‌لیست مراحل پردازش فتوگرامتری در Metashape (از ورود تصاویر تا خروجی‌ها)</h1>
+<div class="top">
+<div class="bar"><i id="pb"></i></div>
+<div class="st"><span id="pt"></span><span id="pf"></span></div>
+</div>
+
+<div class="c">
+<input type="text" id="pn" placeholder="نام پروژه">
+<div class="n" style="margin:10px 0 6px">محصولات و شرایط پروژه (مراحل غیرضروری مخفی می‌شوند):</div>
+<div class="opt" id="opts"></div>
+</div>
+
+<div id="list"></div>
+
+<div class="btns">
+<button class="pr" id="print">چاپ / ذخیره PDF</button>
+<button id="reset">پاک کردن تیک‌ها</button>
+</div>
+<div class="n">مقادیر پیشنهادی بر پایه‌ی کتاب «راهنمای جامع Agisoft Metashape» (نسخه ۲٫۱) و برای پروژه‌ی نقشه‌برداری پهپادی است؛ بسته به داده و نسخه‌ی نرم‌افزار ممکن است نام یا مسیر منوها اندکی تفاوت داشته باشد. برچسب بنفش «فیلترینگ» مراحل حذف نقاط و داده‌ی ناسالم را نشان می‌دهد. علامت «حیاتی» یعنی نادیده گرفتنش به خطای جدی منجر می‌شود.</div>
+</div>
+
+<script>
+var OPT=[["ortho","ارتوموزائیک",1],["dsm","DSM",1],["dtm","DTM",1],["cloud","ابر نقاط",1],["contours","منحنی میزان",1],["mesh","مدل سه‌بعدی بافت‌دار",1],["tiled","Tiled Model",0],["gcp","GCP و Check Point دارم",1]];
+// [title, menu path, note, flags(c=critical,f=filtering), tags]
+var P=[
+["۰) آماده‌سازی داده و سیستم",[
+["تعداد و همپوشانی تصاویر","","حداقل ۷۵٪ طولی و ۶۵٪ عرضی؛ حداقل ۵۰ تصویر برای پروژه‌ی کوچک و ۲۰۰+ برای متوسط","c"],
+["حذف تصاویر نامناسب","","تار، فقط آسمان، فقط زمین صاف، تکراری؛ همه‌ی تصاویر یک فرمت (همه JPEG یا همه TIFF)","c"],
+["بررسی EXIF/XMP","","GPS موجود باشد، ارتفاع منطقی (نه ۰ و نه ۱۰٬۰۰۰ متر) و فاصله کانونی درست","c"],
+["آماده بودن GCP و Check Point","","فایل CSV با نام نقطه، X، Y، Z و سیستم مختصات مشخص؛ تعداد از ماشین‌حساب GCP","","gcp"],
+["سخت‌افزار و فضای ذخیره","Tools → Preferences → GPU","GPU فعال باشد؛ RAM و فضای SSD کافی؛ نام فایل و مسیر پروژه بدون کاراکتر خاص"]]],
+
+["۱) ایجاد پروژه و ورود فایل‌ها",[
+["ایجاد و ذخیره‌ی پروژه","File → Save As… (.psx)","همان ابتدا ذخیره کنید و بعد از هر مرحله‌ی مهم Ctrl+S بزنید","c"],
+["وارد کردن تصاویر","Workflow → Add Photos… / Add Folder…","Storage: Single cameras (برای چند دوربین یا چند لنز Multi-camera system)","c"],
+["نام‌گذاری Chunk","Workspace → Chunk 1 → Rename","نام معنادار برای پروژه‌ی اصلی (برای نسخه‌ی پشتیبان از Duplicate Chunk استفاده می‌شود)"],
+["بررسی مختصات دوربین‌ها","Reference panel","ستون‌های X/Y/Z پر باشد و ارتفاع‌ها منطقی باشند","c"],
+["سیستم مختصات و دقت دوربین‌ها","Reference → Settings","Camera coordinate system = WGS 84 (EPSG::4326)؛ Camera accuracy: ‎۱۰ m برای GPS معمولی یا ‎۰٫۰۳ m برای RTK/PPK","c"],
+["سیستم مختصات پروژه","Reference → Settings → Coordinate System","مثلاً WGS 84 / UTM zone N؛ در صورت نیاز ارتفاع ژئوئید (EGM96/EGM2008) را مشخص کنید","c"],
+["مشخصات دوربین/سنسور","Tools → Camera Calibration","Type = Frame، فاصله کانونی و اندازه پیکسل؛ برای شاتر الکترونیکی Rolling shutter compensation؛ دوربین پیش‌کالیبره: Load و Fix calibration"],
+["ارزیابی کیفیت تصاویر","Photos → Ctrl+A → Estimate Image Quality","تصاویر با Quality < 0.5 را Disable کنید","f"],
+["ماسک‌ها (اختیاری)","Tools → Import Masks / Add Masks","حذف آسمان، ملخ پهپاد و اجسام متحرک ثابت"],
+["ذخیره پروژه","File → Save",""]]],
+
+["۲) تراز تصاویر (Align) و بهینه‌سازی اولیه",[
+["Align Photos","Workflow → Align Photos…","Accuracy: High؛ Generic preselection ✓؛ Reference preselection = Source (با GPS)؛ Key point limit 40000؛ Tie point limit 4000؛ Exclude stationary tie points ✓؛ Adaptive camera model fitting ✓؛ Guided image matching ✗","c"],
+["بررسی نتیجه‌ی تراز","Model view → Show Cameras","تعداد دوربین‌های ترازشده، ابر اتصال یکنواخت، بدون حفره و دوربین ناهمخوان","c"],
+["تصاویر ترازنشده","Photos → راست‌کلیک → Align Selected Cameras","در صورت شکست: Reset Camera Alignment و تکرار با Highest یا حذف تصاویر مشکل‌دار"],
+["Optimize Cameras (اولیه)","Workflow → Optimize Cameras…","فعال: f, cx, cy, k1, k2, k3, p1, p2 ؛ غیرفعال: k4, b1, b2","c"],
+["ذخیره و نسخه‌ی پشتیبان","Workspace → Chunk → Duplicate Chunk","قبل از حذف نقاط از Chunk تراز‌شده نسخه بگیرید"]]],
+
+["۳) فیلترینگ Tie Points (ابر نقاط پراکنده)",[
+["Reprojection Error ≥ 4.0","Edit → Gradual Selection → Reprojection Error","Threshold = 4.0 → Delete → Optimize Cameras (معمولاً ۱ تا ۵٪ نقاط)","cf"],
+["Reprojection Error ≥ 2.0","Edit → Gradual Selection → Reprojection Error","Threshold = 2.0 → Delete → Optimize Cameras (معمولاً ۲ تا ۸٪)","f"],
+["Reconstruction Uncertainty ≥ 15","Edit → Gradual Selection → Reconstruction Uncertainty","Threshold = 15 → Delete → Optimize Cameras (معمولاً ۵ تا ۱۵٪)","f"],
+["Projection Accuracy ≥ 5","Edit → Gradual Selection → Projection Accuracy","Threshold = 5 → Delete → Optimize Cameras (معمولاً ۳ تا ۱۰٪)","f"],
+["Image Count (اختیاری)","Edit → Gradual Selection → Image Count","فقط در صورت انبوه بودن نقاط؛ حذف نقاط دو‌تصویری معمولاً توصیه نمی‌شود","f"],
+["حذف دستی نقاط پرت","Model view → Select + Delete","نقاط شناور در هوا یا زیر زمین → Delete → Optimize Cameras","f"],
+["بررسی توقف فیلترینگ","","مجموع حذف ≤ ۳۰ تا ۴۰٪؛ Tie Points باقی‌مانده ≥ ۵۰٬۰۰۰؛ هدف خطای بازتابش ≈ ۰٫۳–۰٫۵ پیکسل؛ اگر پس از ۲–۳ دور بهتر نشد توقف","cf"]]],
+
+["۴) GCP و Check Point",[
+["وارد کردن مختصات","File → Import → Import Reference","CSV؛ CRS مطابق مختصات نقاط؛ Skip rows=1 اگر سرستون دارد؛ Apply to: Markers","c","gcp"],
+["ایجاد و تعیین مارکرها","Workspace → Markers / Tools → Detect Markers","هر مارکر روی حداقل ۵ تصویر و با بیشینه زوم روی مرکز هدف","c","gcp"],
+["تعیین نوع نقاط","Reference panel (تیک)","با تیک = Control Point؛ بدون تیک = Check Point (مثلاً ۸ کنترل و ۴ چک)","c","gcp"],
+["تنظیم دقت‌ها","Reference → Settings","Marker accuracy ‎۰٫۰۲–۰٫۰۵ m؛ Tie point accuracy ‎۱٫۰ px؛ Camera accuracy مطابق RTK/PPK","","gcp"],
+["Update و Optimize با GCP","Reference → Update؛ Workflow → Optimize Cameras","همه پارامترها فعال + Adaptive camera model fitting","c","gcp"],
+["بررسی خطاها","Reference panel → Error","RMS کنترل < ۰٫۰۳–۰٫۰۵ m؛ RMS چک < ۰٫۰۵–۰٫۱۰ m؛ در خطای زیاد مارکرها، CSV و CRS را بررسی و دوباره Optimize کنید","c","gcp"],
+["فیلتر نهایی (در صورت لزوم)","Edit → Gradual Selection → Reprojection Error","Threshold = 1.0 → Delete → Optimize Cameras","f","gcp"],
+["ذخیره پروژه","File → Save",""]]],
+
+["۵) محدوده‌ی پردازش",[
+["تنظیم Region","Model → Resize Region / Rotate Region","محدوده را روی منطقه‌ی هدف بگذارید؛ نقاط دورافتاده را کنار بگذارید یا Reset Region","c"]]],
+
+["۶) نقشه‌های عمق (Depth Maps)",[
+["Build Depth Maps","Workflow → Build Depth Maps…","Quality: High (Medium برای تست اول یا پروژه‌ی بزرگ)؛ Reuse depth maps ✗؛ Max neighbors 16","c"],
+["فیلتر عمق (Filtering)","همان دیالوگ → Filtering","Moderate (پیش‌فرض)؛ Mild برای ساختمان و جزئیات تیز؛ Aggressive برای نویز زیاد و سطوح صاف","f"],
+["ذخیره پروژه","File → Save",""]]],
+
+["۷) ابر نقاط متراکم و فیلترینگ",[
+["Build Point Cloud","Workflow → Build Point Cloud…","Source: Depth maps؛ Colors ✓؛ Confidence ✓؛ Normals ✗ (در صورت نیاز ✓)؛ Point limit = 0؛ برای پروژه بزرگ Split in blocks","c"],
+["فیلتر Point Confidence","Edit → Gradual Selection → Point Confidence","محدوده‌ی ۰ تا ≈ ۵۰ (کم‌اعتماد) را انتخاب → Delete","cf"],
+["فیلتر Reconstruction Uncertainty","Edit → Gradual Selection → Reconstruction Uncertainty","Threshold ≈ 20 → Delete","f"],
+["حذف نویز آسمان و رنگ‌های ناخواسته","Edit → Select Points by Color","نقاط آسمان یا رنگ‌های نامعتبر → Delete","f"],
+["حذف دستی نویز","Selection tools (Rectangle/Circle/Lasso/Free-form) → Delete","بالای ساختمان‌ها، سطح آب، شیشه، سیم برق، لبه‌ها و زیر زمین","f"],
+["برش به محدوده","Edit → Crop to Region","حذف نقاط بیرون از Region (پیش از آن Region را تنظیم کنید)","f"],
+["کنترل نهایی ابر نقاط","View → Point Cloud → Confidence / Colors","بررسی چشمی (چرخش و زوم)، پرهیز از فیلتر بیش از حد؛ سپس ذخیره"]]],
+
+["۸) طبقه‌بندی ابر نقاط",[
+["Classify Ground Points","Workflow → Classify Ground Points…","Max angle 15° (۵–۱۰ دشت، ۲۰–۳۰ کوهستان)؛ Max distance 1.0 m (۰٫۵ صاف، ۲–۳ ناهموار)؛ Cell size 50 m (بزرگ‌تر از بزرگ‌ترین ساختمان)","c","dtm,contours"],
+["طبقه‌بندی خودکار سایر کلاس‌ها (اختیاری)","Tools → Classify Point Cloud…","ساختمان، پوشش گیاهی، جاده و ...","","cloud"],
+["بررسی و اصلاح کلاس‌ها","View → Point Cloud → By Class؛ Select Points by Class","زمین‌های اشتباه (سقف ساختمان یا تاج درخت) را اصلاح کنید","f","dtm,contours,cloud"],
+["حذف نقاط نویز زیر زمین","Select Points by Class (Low Point/Noise) → Delete","کلاس ۷ (Low Point) را حذف کنید","f","dtm,contours,cloud"]]],
+
+["۹) DEM و منحنی میزان",[
+["Build DEM (DSM)","Workflow → Build DEM…","Source: Point cloud؛ Classes: All؛ Interpolation: Enabled؛ Resolution ≈ ۱٫۵–۲ برابر GSD (مثلاً ۰٫۰۵ m)؛ Projection = CRS پروژه","c","dsm,ortho"],
+["Build DEM (DTM)","Workflow → Build DEM…","Classes: Ground فقط؛ بقیه تنظیمات مشابه DSM","c","dtm,contours"],
+["ویرایش و بررسی DEM","DEM Editor (دوبار کلیک روی DEM)","Hole Filling و Smooth (Radius ≈ 3)؛ حذف قله‌ها و حفره‌ها؛ نمایش Hillshade","f","dsm,dtm,ortho,contours"],
+["تولید منحنی میزان","Tools → Generate Contours…","Source: DTM (ترجیحاً)؛ Interval مطابق مقیاس (مثلاً ۱ m برای ۱:۱۰۰۰)؛ بررسی هموارسازی","","contours"]]],
+
+["۱۰) مدل سه‌بعدی (Mesh)",[
+["Build Model","Workflow → Build Model…","Source: Depth maps؛ Surface type: Arbitrary (3D) یا Height field (زمین)؛ Face count: Medium؛ Interpolation: Enabled؛ Vertex colors ✓","c","mesh,tiled"],
+["حذف اجزای جدا‌افتاده","Tools → Mesh → Remove Isolated Components","تکه‌های پراکنده را حذف کنید","f","mesh"],
+["حذف دستی نویز","Select → Delete","","f","mesh"],
+["پرکردن حفره‌ها","Tools → Mesh → Close Holes","حفره‌های کوچک و متوسط","","mesh"],
+["هموارسازی","Tools → Mesh → Smooth Mesh","Iterations ≈ ۲–۳ (ملایم)","","mesh"],
+["کاهش حجم (در صورت نیاز)","Tools → Mesh → Decimate Mesh","برای تعادل کیفیت و حجم","","mesh"]]],
+
+["۱۱) بافت‌دهی",[
+["Build Texture","Workflow → Build Texture…","Mapping: Adaptive Orthophoto یا Generic؛ Blending: Mosaic؛ Texture size 8192؛ Count ≈ ۴؛ Hole filling ✓؛ Ghosting filter ✓","c","mesh"],
+["بررسی بافت","Model view → Textured","درز‌ها، شبح ماشین و عابر، تفاوت رنگ؛ در صورت نیاز Build Vertex Colors","","mesh"]]],
+
+["۱۲) Tiled Model",[
+["Build Tiled Model","Workflow → Build Tiled Model…","Source: Depth maps (یا Mesh)؛ Tile size پیش‌فرض (256)؛ Face count مناسب؛ Ghosting filter ✓ برای صحنه‌های بزرگ و انتشار وب","","tiled"]]],
+
+["۱۳) ارتوموزائیک",[
+["Build Orthomosaic","Workflow → Build Orthomosaic…","Surface: DEM (زمین) یا Mesh (ساختمان‌ها)؛ Blending: Mosaic؛ Resolution ≈ ۱ تا ۱٫۵ برابر GSD (مثلاً ۰٫۰۳ m)؛ Hole filling ✓؛ Ghosting filter ✓؛ Refine seamlines ✓؛ Color correction: Per camera در نور متغیر","c","ortho"],
+["ویرایش خطوط اتصال","Orthomosaic Editor (دوبار کلیک)","Edit Seamlines / Assign Photos؛ ماشین، ساختمان‌های مایل و لبه‌ها را اصلاح کنید → Update Orthomosaic","f","ortho"],
+["کنترل ارتوموزائیک","","خطوط اتصال روی ساختمان، پرش رنگ، حفره و کشیدگی لبه‌ها","","ortho"]]],
+
+["۱۴) کنترل کیفیت و گزارش",[
+["دقت نهایی روی Check Pointها","Reference panel","RMSE در XY و Z فقط از Check Point؛ ثبت و مقایسه با دقت هدف","c","gcp"],
+["اندازه‌گیری آزمایشی","Ruler tool","فاصله‌ی معلوم را اندازه بگیرید"],
+["Generate Report","File → Export → Generate Report…","گزارش PDF شامل خطای مارکرها، پارامترها و مرور نتایج"],
+["ذخیره و بایگانی","File → Save","ذخیره‌ی نهایی و نسخه‌ی پشتیبان (در صورت نیاز Archive Project)"]]],
+
+["۱۵) خروجی‌ها (Export)",[
+["Export Orthomosaic","File → Export → Export Orthomosaic…","GeoTIFF؛ CRS پروژه؛ Pixel size؛ Compression LZW (یا JPEG)؛ BigTIFF در حجم بالا؛ Write alpha؛ در صورت نیاز Split in blocks","c","ortho"],
+["Export DSM","File → Export → Export DEM…","GeoTIFF؛ CRS و Resolution؛ No-data value مشخص","c","dsm"],
+["Export DTM","File → Export → Export DEM…","همان تنظیمات برای DEM زمین (Classes: Ground)","c","dtm"],
+["Export Point Cloud","File → Export → Export Point Cloud…","LAS/LAZ؛ Save colors ✓، classification ✓، confidence/normals در صورت نیاز؛ CRS؛ Split in blocks برای حجم بالا","c","cloud"],
+["Export Model","File → Export → Export Model…","OBJ/FBX/PLY/glTF؛ Texture JPEG/PNG؛ CRS یا مختصات محلی","","mesh"],
+["Export Tiled Model","File → Export → Export Tiled Model…","Cesium 3D Tiles / SLPK / OBJ tiles","","tiled"],
+["Export Contours","File → Export → Export Contours…","SHP/DXF/KML","","contours"],
+["Export Reference و Cameras","File → Export → Export Reference / Export Cameras…","مختصات دوربین‌ها و مارکرها (CSV) و در صورت لزوم XML","","gcp"],
+["بررسی فایل‌های خروجی","","در QGIS/ArcGIS باز کنید: CRS، محدوده، ارتفاع (ژئوئید)، بدون تکه‌ی گمشده","c"],
+["تحویل و بایگانی","","پوشه‌بندی و نام‌گذاری استاندارد؛ پشتیبان از داده‌ی خام، پروژه و گزارش (برای تکرار از Batch Process استفاده کنید)"]]]
+];
+var $=function(i){return document.getElementById(i)},KEY="ms_chk_v1",st={},op={};
+function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||"{}");st=s.st||{};op=s.op||{}}catch(e){}
+  OPT.forEach(function(o){if(!(o[0] in op))op[o[0]]=!!o[2]})}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({st:st,op:op}))}catch(e){}}
+function vis(t){if(!t)return true;return t.split(",").some(function(x){return op[x]})}
+function build(){
+  $("opts").innerHTML=OPT.map(function(o){return '<label><input type="checkbox" data-o="'+o[0]+'"'+(op[o[0]]?" checked":"")+'>'+o[1]+'</label>'}).join("");
+  var h="";
+  P.forEach(function(ph,pi){
+    var items=ph[1].map(function(s,si){return{s:s,id:pi+"_"+si}}).filter(function(x){return vis(x.s[4])});
+    if(!items.length)return;
+    h+='<details class="c" open><summary>'+ph[0]+'<span id="pc'+pi+'"></span></summary>';
+    items.forEach(function(x){var s=x.s,fl=s[3]||"";
+      h+='<label class="it" id="r'+x.id+'"><input type="checkbox" data-id="'+x.id+'"'+(st[x.id]?" checked":"")+'><span class="t"><b>'+s[0]+'</b>'+(fl.indexOf("c")>=0?'<span class="k">حیاتی</span>':'')+(fl.indexOf("f")>=0?'<span class="f">فیلترینگ</span>':'')+(s[1]?'<span class="p">'+s[1]+'</span>':'')+(s[2]?'<span class="nt">'+s[2]+'</span>':'')+'</span></label>';
+    });
+    h+='</details>';
+  });
+  $("list").innerHTML=h;
+  [].forEach.call(document.querySelectorAll("input[data-id]"),function(b){b.addEventListener("change",function(){st[this.dataset.id]=this.checked;save();upd()})});
+  [].forEach.call(document.querySelectorAll("input[data-o]"),function(b){b.addEventListener("change",function(){op[this.dataset.o]=this.checked;save();build();upd()})});
+  upd();
+}
+function upd(){
+  var tot=0,done=0,fl=0,fd=0;
+  P.forEach(function(ph,pi){var d=0,n=0;
+    ph[1].forEach(function(s,si){if(!vis(s[4]))return;var id=pi+"_"+si,ok=!!st[id];n++;tot++;if(ok){d++;done++}
+      if((s[3]||"").indexOf("f")>=0){fl++;if(ok)fd++}
+      var r=$("r"+id);if(r)r.className="it"+(ok?" done":"")});
+    var e=$("pc"+pi);if(e)e.textContent=d+" / "+n});
+  var p=tot?Math.round(done/tot*100):0;
+  $("pb").style.width=p+"%";
+  $("pt").textContent=p+"٪ تکمیل ("+done+" از "+tot+")";
+  $("pf").textContent="فیلترینگ: "+fd+" از "+fl;
+}
+$("reset").addEventListener("click",function(){if(confirm("همه‌ی تیک‌ها پاک شود؟")){st={};save();build()}});
+$("print").addEventListener("click",function(){window.print()});
+try{$("pn").value=localStorage.getItem("ms_pn")||""}catch(e){}
+$("pn").addEventListener("input",function(){try{localStorage.setItem("ms_pn",this.value)}catch(e){}});
+load();build();
+</script>
+</body>
+</html>

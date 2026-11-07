@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ماشین‌حساب GSD پهپادهای DJI</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--res:#eaf2fd}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 14px}
+h2{font-size:1rem;margin:0 0 8px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+select,input{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+input:disabled{opacity:.55}
+.r{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.n{font-size:.8rem;color:var(--mut);margin-top:6px}
+.res{background:var(--res);border-color:var(--ac)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
+.g div{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px}
+.g b{display:block;font-size:1.25rem;direction:ltr}
+.g span{font-size:.78rem;color:var(--mut)}
+ul{margin:10px 0 0;padding-inline-start:20px;font-size:.9rem}
+.ok{color:var(--ok)}.wr{color:var(--wr)}.er{color:var(--er)}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>ماشین‌حساب GSD و برنامه‌ریزی پرواز (پهپادهای DJI)</h1>
+
+<div class="c">
+<h2>۱) دوربین</h2>
+<label>مدل پهپاد / دوربین</label>
+<select id="model"></select>
+<div class="r">
+<div><label>عرض سنسور (mm)</label><input id="sw" type="number" step="0.01"></div>
+<div><label>فاصله کانونی واقعی (mm)</label><input id="fl" type="number" step="0.01"></div>
+<div><label>پیکسل ضلع بلند</label><input id="iw" type="number"></div>
+<div><label>پیکسل ضلع کوتاه</label><input id="ih" type="number"></div>
+</div>
+<div class="n">با انتخاب مدل، مقادیر پر می‌شوند و قابل ویرایش‌اند (مقادیر تقریبی؛ برای دقت بیشتر از دفترچه دوربین بررسی کنید).</div>
+</div>
+
+<div class="c">
+<h2>۲) پارامترهای پرواز</h2>
+<label>ورودی اصلی</label>
+<select id="mode"><option value="alt">ارتفاع پرواز → محاسبه GSD</option><option value="gsd">GSD هدف → محاسبه ارتفاع</option></select>
+<div class="r">
+<div><label>ارتفاع پرواز نسبت به زمین (m)</label><input id="alt" type="number" value="100" min="1"></div>
+<div><label>GSD هدف (cm/px)</label><input id="tg" type="number" value="2" step="0.1" min="0.1"></div>
+<div><label>ارتفاع مانع / ساختمان (m)</label><input id="obs" type="number" value="0" min="0"></div>
+<div><label>جهت دوربین</label><select id="ori"><option value="across">ضلع بلند عمود بر مسیر</option><option value="along">ضلع بلند موازی مسیر</option></select></div>
+<div><label>هم‌پوشانی طولی (%)</label><input id="fo" type="number" value="80" min="0" max="95"></div>
+<div><label>هم‌پوشانی عرضی (%)</label><input id="so" type="number" value="70" min="0" max="95"></div>
+<div><label>سرعت پرواز (m/s)</label><input id="spd" type="number" value="8" step="0.5" min="0.5"></div>
+<div><label>حداقل فاصله زمانی عکس‌ها (s)</label><input id="mi" type="number" value="2" step="0.5" min="0.5"></div>
+<div><label>سرعت شاتر (1/…)</label><input id="sh" type="number" value="1000" min="30"></div>
+<div><label>مدت باتری قابل استفاده (min)</label><input id="bat" type="number" value="20" min="3"></div>
+</div>
+</div>
+
+<div class="c">
+<h2>۳) محدوده نقشه‌برداری (مستطیلی)</h2>
+<div class="r">
+<div><label>طول در راستای خطوط پرواز (m)</label><input id="L" type="number" value="500" min="1"></div>
+<div><label>عرض عمود بر خطوط (m)</label><input id="W" type="number" value="300" min="1"></div>
+</div>
+</div>
+
+<div class="c">
+<h2>۴) GRD (توان تفکیک زمینی مؤثر)</h2>
+<div class="r">
+<div><label>ضریب GRD ÷ GSD</label><input id="kf" type="number" step="0.1" min="1" value="1.5"></div>
+<div><label>&nbsp;</label><div class="n" style="margin:0;padding:10px 0"><input type="checkbox" id="autok" checked style="width:auto;vertical-align:middle"> ضریب پیشنهادی مدل</div></div>
+</div>
+<div class="n">GRD = GSD × ضریب. به‌دلیل کیفیت لنز، فیلتر بایر، فشرده‌سازی و نویز، کوچک‌ترین جزئیات قابل تشخیص معمولاً ۱٫۳ تا ۳ برابر GSD است. ضریب‌های پیش‌فرض تخمینی‌اند؛ با برداشتن تیک می‌توانید ضریب دلخواه (مثلاً از تست میدانی) وارد کنید.</div>
+</div>
+
+<div class="c res">
+<h2>نتایج</h2>
+<div class="g">
+<div><span>GSD در سطح زمین</span><b id="rG">—</b></div>
+<div><span>GSD در بالای مانع</span><b id="rGo">—</b></div>
+<div><span>ارتفاع پرواز</span><b id="rA">—</b></div>
+<div><span>ردپای تصویر (عرض×طول)</span><b id="rF">—</b></div>
+<div><span>فاصله خطوط پرواز</span><b id="rLs">—</b></div>
+<div><span>فاصله بین عکس‌ها</span><b id="rPd">—</b></div>
+<div><span>فاصله زمانی عکس‌ها</span><b id="rPi">—</b></div>
+<div><span>تاری حرکت (px)</span><b id="rB">—</b></div>
+<div><span>هم‌پوشانی طولی در بالای مانع</span><b id="rOf">—</b></div>
+<div><span>هم‌پوشانی عرضی در بالای مانع</span><b id="rOs">—</b></div>
+</div>
+<div class="g" style="margin-top:8px">
+<div><span>تعداد خطوط</span><b id="rN">—</b></div>
+<div><span>تعداد عکس‌ها</span><b id="rP">—</b></div>
+<div><span>مسافت پرواز</span><b id="rD">—</b></div>
+<div><span>زمان پرواز</span><b id="rT">—</b></div>
+<div><span>تعداد باتری</span><b id="rBt">—</b></div>
+<div><span>مساحت</span><b id="rAr">—</b></div>
+</div>
+<div class="g" style="margin-top:8px">
+<div><span>GRD در سطح زمین</span><b id="rGR">—</b></div>
+<div><span>GRD در بالای مانع</span><b id="rGRo">—</b></div>
+<div style="grid-column:1/-1"><span>GRD با احتساب تاری حرکت (سطح زمین)</span><b id="rGRb">—</b></div>
+</div>
+<ul id="msgs"></ul>
+</div>
+<div class="n">محاسبات برای دوربین عمودی (نادیر) و زمین مسطح‌اند. GSD در بالای مانع کوچک‌تر (بهتر) است اما هم‌پوشانی در آن سطح کمتر می‌شود.</div>
+</div>
+
+<script>
+// name, sensor width mm, real focal mm, long px, short px
+var M=[
+["Mavic 3 / 3 Classic / 3 Pro / 3E (واید 4/3)",17.3,12.29,5280,3956],
+["Matrice 4E (واید 4/3)",17.3,12.29,5280,3956],
+["Air 3 / Mini 3 / Mini 3 Pro / Mini 4 Pro (۴۸MP)",9.84,6.7,8064,6048],
+["Air 2S",13.2,8.38,5472,3648],
+["Mavic Air 2 (۴۸MP)",6.4,4.5,8000,6000],
+["Mavic 2 Pro",13.2,10.26,5472,3648],
+["Mavic 2 Zoom (واید)",6.17,4.3,4000,3000],
+["Mavic Pro",6.17,4.73,4000,3000],
+["Mini 2 / Mini SE",6.17,4.5,4000,3000],
+["Phantom 4 Pro / Pro V2 / Advanced",13.2,8.8,5472,3648],
+["Phantom 4 RTK",13.2,8.8,5472,3648],
+["Phantom 3 Pro / Advanced",6.17,3.61,4000,3000],
+["Inspire 2 + Zenmuse X7 (24mm)",23.5,24,6016,4008],
+["Inspire 2 + Zenmuse X5S (15mm)",17.3,15,5280,3956],
+["Matrice 300/350 + Zenmuse P1 (24mm)",35.9,24,8192,5460],
+["Matrice 300/350 + Zenmuse P1 (35mm)",35.9,35,8192,5460],
+["Matrice 300/350 + Zenmuse P1 (50mm)",35.9,50,8192,5460],
+["Zenmuse L1 (RGB)",13.2,8.8,5472,3648],
+["Zenmuse L2 (RGB)",17.3,12.29,5280,3956],
+["دلخواه",13.2,8.8,5472,3648]
+];
+// پیش‌فرض ضریب GRD/GSD به ترتیب مدل‌های بالا (تخمینی)
+var K=[1.5,1.5,2.0,1.6,2.2,1.6,2.4,2.4,2.4,1.7,1.6,2.6,1.4,1.5,1.3,1.3,1.3,1.7,1.5,2.0];
+var $=function(i){return document.getElementById(i)};
+var ms=$("model");
+M.forEach(function(m,i){var o=document.createElement("option");o.value=i;o.textContent=m[0];ms.appendChild(o)});
+function load(){var m=M[ms.value];$("sw").value=m[1];$("fl").value=m[2];$("iw").value=m[3];$("ih").value=m[4];calc()}
+function set(id,t){$(id).textContent=t}
+function fm(v,d){return v.toFixed(d===undefined?1:d)}
+function calc(){
+  var sw=+$("sw").value,f=+$("fl").value,iw=+$("iw").value,ih=+$("ih").value;
+  var mode=$("mode").value,h=+$("obs").value,spd=+$("spd").value,mi=+$("mi").value,sh=+$("sh").value;
+  var fo=+$("fo").value/100,so=+$("so").value/100,L=+$("L").value,W=+$("W").value,bat=+$("bat").value;
+  $("alt").disabled=mode=="gsd";$("tg").disabled=mode=="alt";
+  var autoK=$("autok").checked;$("kf").disabled=autoK;if(autoK)$("kf").value=K[ms.value];
+  var kk=+$("kf").value||1;
+  if(!(sw>0&&f>0&&iw>0&&ih>0&&spd>0&&L>0&&W>0)) return;
+  var H,g;
+  if(mode=="alt"){H=+$("alt").value;g=H*sw/(f*iw)}            // m/px
+  else{g=+$("tg").value/100;H=g*f*iw/sw;$("alt").value=fm(H,0)}
+  if(!(H>0)) return;
+  if(mode=="alt")$("tg").value=fm(g*100,2);
+  var gcm=g*100;
+  var fpL=g*iw,fpS=g*ih;
+  var across=$("ori").value=="across"?fpL:fpS, along=$("ori").value=="across"?fpS:fpL;
+  var ls=(1-so)*across,pd=(1-fo)*along,pi=pd/spd;
+  var msgs=[];
+  var blur=spd/sh/g;
+  var go=H>h?gcm*(H-h)/H:NaN;
+  var k=H/(H-h);
+  var ofo=H>h?Math.max(0,1-(1-fo)*k):0, oso=H>h?Math.max(0,1-(1-so)*k):0;
+  var lines=Math.ceil(W/ls)+1,perLine=Math.ceil(L/pd)+1,photos=lines*perLine;
+  var dist=lines*L+(lines-1)*ls,time=dist/spd+lines*6;
+  set("rG",fm(gcm,2)+" cm");
+  set("rGo",isNaN(go)?"—":fm(go,2)+" cm");
+  set("rA",fm(H,0)+" m");
+  set("rF",fm(across,0)+"×"+fm(along,0)+" m");
+  set("rLs",fm(ls,1)+" m");
+  set("rPd",fm(pd,1)+" m");
+  set("rPi",fm(pi,1)+" s");
+  set("rB",fm(blur,2));
+  set("rOf",fm(ofo*100,0)+"%");
+  set("rOs",fm(oso*100,0)+"%");
+  set("rN",lines);
+  set("rP",photos);
+  set("rD",fm(dist/1000,2)+" km");
+  set("rT",fm(time/60,0)+" min");
+  set("rBt",Math.ceil(time/60/bat));
+  set("rAr",fm(L*W/10000,1)+" ha");
+  var grd=gcm*kk;
+  set("rGR",fm(grd,2)+" cm");
+  set("rGRo",isNaN(go)?"—":fm(go*kk,2)+" cm");
+  set("rGRb",fm(Math.sqrt(grd*grd+Math.pow(blur*gcm,2)),2)+" cm");
+  if(pi<mi)msgs.push('<li class="er">فاصله زمانی عکس‌ها ('+fm(pi,1)+' s) کمتر از حداقل دوربین است. سرعت را به حداکثر <b>'+fm(pd/mi,1)+' m/s</b> کاهش دهید یا هم‌پوشانی طولی را کمتر کنید.</li>');
+  if(blur>1)msgs.push('<li class="er">تاری حرکت بیش از ۱ پیکسل است؛ شاتر سریع‌تر یا سرعت کمتر لازم است.</li>');
+  else if(blur>0.5)msgs.push('<li class="wr">تاری حرکت بین ۰٫۵ تا ۱ پیکسل است؛ برای فتوگرامتری دقیق شاتر را سریع‌تر کنید.</li>');
+  else msgs.push('<li class="ok">تاری حرکت در حد مجاز (کمتر از ۰٫۵ پیکسل).</li>');
+  if(h>0){
+    if(h>=H)msgs.push('<li class="er">ارتفاع مانع از ارتفاع پرواز بیشتر یا برابر است؛ ارتفاع پرواز را افزایش دهید.</li>');
+    else{
+      if(H-h<30)msgs.push('<li class="wr">فاصله پهپاد تا بالای مانع کمتر از ۳۰ متر است؛ مسائل ایمنی را بررسی کنید.</li>');
+      if(ofo<0.6||oso<0.5)msgs.push('<li class="wr">هم‌پوشانی در بالای مانع افت می‌کند (طولی '+fm(ofo*100,0)+'٪، عرضی '+fm(oso*100,0)+'٪)؛ برای بازسازی مناسب، هم‌پوشانی را بیشتر کنید.</li>');
+    }
+  }
+  if(fo<0.7||so<0.6)msgs.push('<li class="wr">برای فتوگرامتری معمولاً هم‌پوشانی طولی ۷۵–۸۵٪ و عرضی ۶۵–۷۵٪ توصیه می‌شود.</li>');
+  $("msgs").innerHTML=msgs.join("");
+}
+ms.addEventListener("change",load);
+["sw","fl","iw","ih","mode","alt","tg","obs","ori","fo","so","spd","mi","sh","bat","L","W","kf","autok"].forEach(function(i){$(i).addEventListener("input",calc)});
+load();
+</script>
+</body>
+</html>

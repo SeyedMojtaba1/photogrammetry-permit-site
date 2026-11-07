@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>چک‌لیست پیش از پرواز پهپاد</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--okbg:#e6f5ec}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--okbg:#17301f}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--okbg:#17301f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 12px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0}
+.bar{height:10px;background:var(--bd);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+.st{display:flex;justify-content:space-between;font-size:.85rem;margin-top:4px}
+#go{font-weight:700}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin-bottom:12px}
+.c h2{font-size:1rem;margin:4px 0;display:flex;justify-content:space-between}
+.c h2 span{font-size:.8rem;color:var(--mut);font-weight:400}
+.it{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--bd);cursor:pointer}
+.it input{width:22px;height:22px;margin-top:3px;flex:none;accent-color:var(--ok)}
+.it.done span.t{color:var(--mut);text-decoration:line-through}
+.k{color:var(--er);font-size:.75rem;margin-inline-start:6px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=text],textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+label.l{display:block;font-size:.85rem;color:var(--mut);margin:6px 0 4px}
+.btns{display:flex;gap:10px;margin:12px 0}
+button{flex:1;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+.n{font-size:.8rem;color:var(--mut)}
+@media print{.top,.btns{display:none}body{background:#fff;color:#000}.c{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>چک‌لیست پیش از پرواز پهپاد (نقشه‌برداری و فتوگرامتری)</h1>
+
+<div class="top">
+<div class="bar"><i id="pb"></i></div>
+<div class="st"><span id="pt">۰٪ تکمیل</span><span id="go"></span></div>
+</div>
+
+<div class="c">
+<div class="row">
+<div><label class="l">نام پروژه / محل</label><input type="text" id="pn"></div>
+<div><label class="l">خلبان / تاریخ</label><input type="text" id="pd"></div>
+</div>
+</div>
+
+<div id="list"></div>
+
+<div class="c">
+<label class="l">یادداشت‌ها</label>
+<textarea id="notes" rows="3"></textarea>
+</div>
+
+<div class="btns">
+<button class="p" id="print">چاپ / ذخیره PDF</button>
+<button id="reset">پاک کردن همه تیک‌ها</button>
+</div>
+<div class="n">موارد دارای علامت «حیاتی» باید قبل از برخاستن کامل شوند. این چک‌لیست راهنماست؛ مقررات و دفترچه‌ی پهپاد خودتان را هم رعایت کنید. تیک‌ها در همین مرورگر ذخیره می‌شوند.</div>
+</div>
+
+<script>
+// [text, critical]
+var S=[
+["۱) مجوزها و برنامه‌ریزی",[
+["مجوز پرواز و هماهنگی با مراجع مربوط دریافت شده",1],
+["وضعیت منطقه ممنوعه پرواز (فرودگاه، مناطق حساس) بررسی شده",1],
+["خلبان صلاحیت پرواز دارد و بیمه‌ی پهپاد معتبر است",0],
+["برنامه‌ی پرواز (KML، ارتفاع، هم‌پوشانی، GSD) آماده و بررسی شده",0],
+["نقطه‌ی برخاست و فرود امن و محل بازگشت اضطراری مشخص شده",1]]],
+["۲) هوا و محیط",[
+["سرعت باد و وزش در ارتفاع پرواز در محدوده‌ی مجاز پهپاد است",1],
+["بارش، مه یا گرد و غبار شدید وجود ندارد",1],
+["دمای هوا در محدوده‌ی کاری باتری و پهپاد است",0],
+["زاویه‌ی خورشید مناسب است و نور یکنواخت است (بدون سایه‌ی تیز یا تغییر شدید نور)",0],
+["پیش‌بینی KP و وضعیت GNSS مناسب است",0]]],
+["۳) تجهیزات و باتری‌ها",[
+["پهپاد، ریموت و تبلت/گوشی شارژ کامل دارند",1],
+["باتری‌های پرواز (به‌اضافه‌ی ذخیره) کامل شارژ و بدون ورم یا آسیب‌اند",1],
+["کارت حافظه جای کافی دارد و فرمت شده است",1],
+["فیلتر ND یا CPL (در صورت نیاز) و ابزار تمیز کردن لنز همراه است",0],
+["پناهگاه فرود (هلی‌پد)، سنجاق، پاور‌بانک و کابل‌ها همراه است",0]]],
+["۴) بازرسی بدنه",[
+["ملخ‌ها سالم، بدون ترک و سفت‌اند",1],
+["بازوها، موتورها و بدنه سالم‌اند و بدون لقی",1],
+["لنز دوربین تمیز است و گیمبال آزاد است (قفل گیمبال برداشته شده)",1],
+["سنسورهای دید و ایمنی تمیزند و پوشیده نیستند",0],
+["باتری سر جا قفل شده است",1]]],
+["۵) نرم‌افزار و تنظیمات پرواز",[
+["نسخه‌ی نرم‌افزار پهپاد و ریموت سازگار و آخرین ثبت‌شده است",0],
+["قطب‌نما (IMU/کمپاس) در صورت درخواست کالیبره شده است",1],
+["تعداد ماهواره‌ها کافی است و نقطه‌ی خانه (Home Point) ثبت شده است",1],
+["ارتفاع بازگشت به خانه (RTH) بالاتر از بلندترین مانع تنظیم شده است",1],
+["رفتار در قطع سیگنال (RTH/فرود) و آستانه‌ی باتری کم تنظیم شده است",1],
+["محدودیت ارتفاع و فاصله مطابق مقررات تنظیم شده است",0]]],
+["۶) تنظیمات دوربین برای فتوگرامتری",[
+["حالت دستی: ISO پایین، شاتر سریع (حدود 1/1000 یا بیشتر) و دیافراگم ثابت",0],
+["تعادل سفیدی دستی و قفل شده است",0],
+["فوکوس روی بی‌نهایت یا قفل‌شده است",0],
+["فرمت تصویر (JPEG یا RAW) و ذخیره‌ی مختصات در EXIF بررسی شده",0],
+["یک عکس تست گرفته شد و هیستوگرام و وضوح بررسی شد",0],
+["فاصله‌ی زمانی عکس‌ها با سرعت پرواز و هم‌پوشانی هماهنگ است",0]]],
+["۷) کنترل زمینی و دقت",[
+["نقاط کنترل زمینی (GCP) پوشیده یا علامت‌گذاری و با GNSS دقیق برداشت شده‌اند",0],
+["در صورت استفاده از RTK/PPK، ارتباط با ایستگاه یا شبکه برقرار و Fix است",0],
+["نقاط چک (Check Point) مستقل از GCPها در نظر گرفته شده است",0],
+["محل GCPها در نقشه ثبت و عکس‌برداری از آن‌ها انجام شده است",0]]],
+["۸) ایمنی محل",[
+["محل پرواز از افراد، خودرو و مانع پاک است و منطقه‌ی ایمن علامت‌گذاری شده",1],
+["خطوط برق، دکل، درخت بلند و ساختمان‌ها در مسیر شناسایی شده‌اند",1],
+["دیده‌بان یا ناظر (در صورت لزوم) هماهنگ شده و اتصال ارتباطی برقرار است",0],
+["جعبه‌ی کمک‌های اولیه و کپسول اطفاء (در صورت نیاز) در دسترس است",0],
+["برنامه‌ی اضطراری (خرابی، فرود اضطراری، گم شدن پهپاد) مرور شده است",0]]],
+["۹) هنگام پرواز و بلافاصله بعد",[
+["پرواز تست کوتاه در ارتفاع کم (هاور) انجام و پایداری بررسی شد",1],
+["در طول ماموریت باتری، سیگنال و پیشرفت ماموریت پایش می‌شود",0],
+["پس از فرود: تعداد عکس‌ها با برنامه مطابقت دارد و عکس‌ها تار یا تاریک نیستند",0],
+["از کارت حافظه و لاگ پرواز نسخه‌ی پشتیبان تهیه شده است",0],
+["باتری‌ها خنک و در صورت لزوم در حالت ذخیره‌سازی قرار داده شدند",0]]]
+];
+var $=function(i){return document.getElementById(i)};
+var KEY="preflight_v1",st={};
+function load(){try{var s=localStorage.getItem(KEY);if(s)st=JSON.parse(s)||{}}catch(e){st={}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function build(){
+  var h="";
+  S.forEach(function(sec,si){
+    h+='<div class="c"><h2>'+sec[0]+'<span id="sc'+si+'"></span></h2>';
+    sec[1].forEach(function(it,ii){
+      var id=si+"_"+ii;
+      h+='<label class="it" id="r'+id+'"><input type="checkbox" data-id="'+id+'"><span class="t">'+it[0]+(it[1]?'<span class="k">حیاتی</span>':'')+'</span></label>';
+    });
+    h+='</div>';
+  });
+  $("list").innerHTML=h;
+  var boxes=document.querySelectorAll("input[data-id]");
+  for(var i=0;i<boxes.length;i++){
+    boxes[i].checked=!!st[boxes[i].dataset.id];
+    boxes[i].addEventListener("change",function(){st[this.dataset.id]=this.checked;save();update()});
+  }
+}
+function update(){
+  var tot=0,done=0,crit=0,critDone=0;
+  S.forEach(function(sec,si){
+    var d=0;
+    sec[1].forEach(function(it,ii){
+      var id=si+"_"+ii,ok=!!st[id];
+      tot++;if(ok){done++;d++}
+      if(it[1]){crit++;if(ok)critDone++}
+      var r=$("r"+id);if(r)r.className="it"+(ok?" done":"");
+    });
+    $("sc"+si).textContent=d+" / "+sec[1].length;
+  });
+  var p=Math.round(done/tot*100);
+  $("pb").style.width=p+"%";
+  $("pt").textContent=p+"٪ تکمیل ("+done+" از "+tot+")";
+  var g=$("go");
+  if(critDone==crit){g.textContent="✔ موارد حیاتی کامل است";g.style.color="var(--ok)"}
+  else{g.textContent="✖ "+(crit-critDone)+" مورد حیاتی باقی مانده";g.style.color="var(--er)"}
+}
+function field(id,key){
+  try{$(id).value=localStorage.getItem(key)||""}catch(e){}
+  $(id).addEventListener("input",function(){try{localStorage.setItem(key,this.value)}catch(e){}});
+}
+$("reset").addEventListener("click",function(){
+  if(!confirm("همه‌ی تیک‌ها پاک شود؟"))return;
+  st={};save();build();update();
+});
+$("print").addEventListener("click",function(){window.print()});
+load();build();update();
+field("pn","pf_pn");field("pd","pf_pd");field("notes","pf_notes");
+</script>
+</body>
+</html>
