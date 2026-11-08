@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محاسبه زون UTM از موقعیت یا KML</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<script src="lib/jszip.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--res:#eaf2fd}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:680px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 12px}
+h2{font-size:1rem;margin:0 0 6px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.res{background:var(--res);border-color:var(--ac)}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+select,input,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+textarea{direction:ltr;font-family:ui-monospace,Consolas,monospace;font-size:.8rem}
+.r{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
+.g div{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px}
+.g b{display:block;font-size:1.2rem;direction:ltr}
+.g span{font-size:.78rem;color:var(--mut)}
+.n{font-size:.8rem;color:var(--mut);margin-top:6px}
+button{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer;width:100%;margin-top:8px}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+ul{margin:10px 0 0;padding-inline-start:20px;font-size:.9rem}
+.ok{color:var(--ok)}.wr{color:var(--wr)}.er{color:var(--er)}
+.zb{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.85rem}
+.zb i{display:block;height:12px;background:var(--ac);border-radius:6px}
+.zb span{min-width:70px}
+.sc{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;direction:ltr}
+td,th{border:1px solid var(--bd);padding:3px 6px;text-align:left}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>محاسبه زون UTM از موقعیت فعلی یا فایل KML/KMZ</h1>
+
+<div class="c">
+<h2>۱) موقعیت فعلی یا مختصات دستی</h2>
+<button class="p" id="geo">استفاده از موقعیت فعلی من</button>
+<div class="n" id="gln" hidden>از آخرین نقطه‌ی «بررسی حریم هوایی» پر شد؛ در صورت نیاز تغییر دهید.</div>
+<div class="r">
+<div><label>عرض جغرافیایی (lat)</label><input id="lat" type="number" step="any" placeholder="35.70"></div>
+<div><label>طول جغرافیایی (lon)</label><input id="lon" type="number" step="any" placeholder="51.40"></div>
+</div>
+</div>
+
+<div class="c">
+<h2>۲) فایل KML / KMZ (مرز پروژه یا نقاط)</h2>
+<input id="kf" type="file" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,text/xml">
+<label>یا متن KML را بچسبانید</label>
+<textarea id="kt" rows="3"></textarea>
+<div class="n" id="ks">فایلی بارگذاری نشده است. تمام نقاط و رئوس خطوط و پلیگن‌ها خوانده می‌شود.</div>
+</div>
+
+<div class="c res" id="out" hidden>
+<div class="n" id="src" style="margin:0 0 8px"></div>
+<div class="g">
+<div><span>زون UTM</span><b id="oz">—</b></div>
+<div><span>کد GZD (زون + باند)</span><b id="og">—</b></div>
+<div><span>کد EPSG (WGS84 / UTM)</span><b id="oe">—</b></div>
+<div><span>نصف‌النهار مرکزی</span><b id="ocm">—</b></div>
+<div><span>محدوده‌ی طولی زون</span><b id="orr">—</b></div>
+<div><span>فاصله از نصف‌النهار مرکزی</span><b id="od">—</b></div>
+<div style="grid-column:1/-1"><span>ضریب مقیاس / اعوجاج</span><b id="ok2">—</b></div>
+</div>
+<button id="cp">کپی کد EPSG</button>
+<div id="zs" style="margin-top:10px"></div>
+<div class="sc"><table id="tb" hidden></table></div>
+<ul id="ms"></ul>
+</div>
+<div class="n">محاسبه برای سیستم WGS84 و زون‌های ۶ درجه‌ای است. اعوجاج مقیاس: عدد منفی یعنی طول‌ها روی نقشه کوتاه‌تر از زمین‌اند و عدد مثبت یعنی بلندتر؛ در حدود ۱۸۰ کیلومتر از نصف‌النهار مرکزی صفر است. زون‌های ویژه‌ی نروژ (32V) و اسوالبارد در نظر گرفته شده‌اند.</div>
+</div>
+
+<script>
+var $=function(i){return document.getElementById(i)},R=Math.PI/180,K0=0.9996,LB="CDEFGHJKLMNPQRSTUVWX",epsg="";
+function zoneOf(lat,lon){
+  lon=((lon+540)%360)-180;var z=Math.floor((lon+180)/6)+1;
+  if(lat>=56&&lat<64&&lon>=3&&lon<12)z=32;
+  if(lat>=72&&lat<84){if(lon>=0&&lon<9)z=31;else if(lon>=9&&lon<21)z=33;else if(lon>=21&&lon<33)z=35;else if(lon>=33&&lon<42)z=37}
+  return Math.min(60,Math.max(1,z));
+}
+function info(lat,lon,zf){
+  var z=zf||zoneOf(lat,lon),cm=(z-1)*6-177,dl=((lon-cm+540)%360)-180,c=Math.cos(lat*R);
+  var k=K0*(1+Math.pow(dl*R*c,2)/2);
+  return{z:z,cm:cm,dl:dl,k:k,ppm:(k-1)*1e6,d:Math.abs(dl)*R*6371*c,n:lat>=0,
+    band:(lat<-80||lat>84)?"":LB[Math.min(19,Math.floor((lat+80)/8))],epsg:(lat>=0?32600:32700)+z};
+}
+function fl(x){return Math.abs(x)+"°"+(x<0?"W":"E")}
+function show(pts,label){
+  if(!pts.length){$("out").hidden=true;return}
+  var la=pts.map(function(p){return p[0]}),lo=pts.map(function(p){return p[1]});
+  var a0=Math.min.apply(0,la),a1=Math.max.apply(0,la),o0=Math.min.apply(0,lo),o1=Math.max.apply(0,lo);
+  var cl=(a0+a1)/2,co=(o0+o1)/2,I=info(cl,co),ms=[];
+  $("out").hidden=false;$("src").textContent=label;
+  $("oz").textContent=I.z+" "+(I.n?"N":"S");
+  $("og").textContent=I.band?I.z+I.band:"UPS";
+  $("oe").textContent="EPSG:"+I.epsg;epsg="EPSG:"+I.epsg;
+  $("ocm").textContent=fl(I.cm);
+  var lo0=(I.z-1)*6-180;$("orr").textContent=fl(lo0)+" – "+fl(lo0+6);
+  $("od").textContent=I.d.toFixed(0)+" km";
+  // distortion: max over bbox
+  var mp=0,cs=[[a0,o0],[a0,o1],[a1,o0],[a1,o1],[a0,co],[a1,co],[cl,o0],[cl,o1],[cl,co]];
+  cs.forEach(function(q){var x=info(q[0],q[1],I.z).ppm;if(Math.abs(x)>Math.abs(mp))mp=x});
+  $("ok2").textContent="k = "+I.k.toFixed(6)+"  ("+(I.ppm>0?"+":"")+I.ppm.toFixed(0)+" ppm)";
+  var zc={},tot=pts.length;
+  pts.forEach(function(p){var z=zoneOf(p[0],p[1])+(p[0]<0?"S":"N");zc[z]=(zc[z]||0)+1});
+  var keys=Object.keys(zc).sort(function(a,b){return zc[b]-zc[a]});
+  var multi=pts.length>1;
+  $("zs").innerHTML=multi?keys.map(function(k){var pc=zc[k]/tot*100;return '<div class="zb"><span>زون '+k+'</span><i style="width:'+Math.max(2,pc*0.55)+'%"></i>'+pc.toFixed(0)+'٪</div>'}).join(""):"";
+  var tb=$("tb");
+  if(multi){
+    tb.hidden=false;
+    var h='<tr><th>Zone</th><th>EPSG</th><th>CM</th><th>Points</th></tr>';
+    keys.forEach(function(k){var z=parseInt(k),s=k.slice(-1)==="S";h+='<tr><td>'+k+'</td><td>'+((s?32700:32600)+z)+'</td><td>'+fl((z-1)*6-177)+'</td><td>'+zc[k]+'</td></tr>'});
+    tb.innerHTML=h;
+    ms.push('<li>محدوده‌ی پروژه: عرض '+a0.toFixed(4)+' تا '+a1.toFixed(4)+'، طول '+o0.toFixed(4)+' تا '+o1.toFixed(4)+' ('+tot+' نقطه). زون پیشنهادی بر اساس مرکز محدوده: <b>'+I.z+(I.n?"N":"S")+'</b>.</li>');
+    ms.push('<li>حداکثر اعوجاج مقیاس داخل محدوده در این زون: <b>'+mp.toFixed(0)+' ppm</b> (حدود '+(Math.abs(mp)*0.01).toFixed(1)+' cm در هر ۱۰۰ متر).</li>');
+    if(keys.length>1){
+      ms.push('<li class="wr">پروژه در بیش از یک زون قرار دارد ('+keys.join("، ")+'). همه‌ی مختصات و GCPها را در یک زون واحد (معمولاً زون پیشنهادی یا زون با بیشترین نقطه: <b>'+keys[0]+'</b>) نگه دارید؛ اگر اعوجاج زیاد است یک سیستم Transverse Mercator محلی با نصف‌النهار مرکزی '+co.toFixed(3)+'° تعریف کنید.</li>');
+    }
+  }else{
+    ms.push('<li>این نقطه در زون <b>'+I.z+(I.n?"N":"S")+'</b> قرار دارد؛ اگر پروژه‌ی شما در چند زون پخش می‌شود، مرز آن را با KML بسنجید.</li>');
+  }
+  if(!I.band)ms.push('<li class="er">عرض جغرافیایی خارج از ۸۰°S تا ۸۴°N است؛ UTM تعریف نمی‌شود و باید از UPS استفاده شود.</li>');
+  if(I.d>330)ms.push('<li class="wr">نقطه‌ی مرکزی نزدیک لبه‌ی زون است؛ اعوجاج بیشتر می‌شود.</li>');
+  if(cl>25&&cl<40&&co>43&&co<64)ms.push('<li>ایران بین زون‌های ۳۸ تا ۴۱ قرار دارد: ۳۸ (غرب، ۴۲–۴۸°E)، ۳۹ (مرکز و تهران، ۴۸–۵۴°E)، ۴۰ (۵۴–۶۰°E) و ۴۱ (شرق دور، ۶۰–۶۶°E).</li>');
+  $("ms").innerHTML=ms.join("");
+}
+function manual(){var a=parseFloat($("lat").value),b=parseFloat($("lon").value);
+  if(isFinite(a)&&isFinite(b)&&Math.abs(a)<=90&&Math.abs(b)<=180)show([[a,b]],"مختصات واردشده: "+a+", "+b)}
+function parseKml(t){
+  var st=$("ks");
+  try{
+    if(!t.trim()){st.textContent="فایلی بارگذاری نشده است.";return}
+    var d=new DOMParser().parseFromString(t,"text/xml");
+    if(d.getElementsByTagName("parsererror").length)throw 0;
+    var ce=d.getElementsByTagName("coordinates"),pts=[],i;
+    for(i=0;i<ce.length;i++)ce[i].textContent.trim().split(/\s+/).forEach(function(s){var q=s.split(",").map(parseFloat);if(isFinite(q[0])&&isFinite(q[1])&&Math.abs(q[1])<=90&&Math.abs(q[0])<=180)pts.push([q[1],q[0]])});
+    if(!pts.length)throw 0;
+    st.textContent="خوانده شد: "+pts.length+" نقطه";
+    show(pts,"فایل KML/KMZ ("+pts.length+" نقطه)");
+  }catch(e){st.textContent="KML معتبر نبود یا مختصاتی در آن پیدا نشد."}
+}
+$("kf").addEventListener("change",function(){
+  var f=this.files[0];if(!f)return;var st=$("ks");
+  if(/\.kmz$/i.test(f.name)){
+    if(typeof JSZip==="undefined"){st.textContent="کتابخانه‌ی KMZ بارگذاری نشد؛ فایل را به KML تبدیل کنید.";return}
+    f.arrayBuffer().then(function(b){return JSZip.loadAsync(b)}).then(function(z){
+      var nm=Object.keys(z.files).filter(function(n){return /\.kml$/i.test(n)&&!z.files[n].dir});
+      if(!nm.length)throw 0;
+      var p=nm.filter(function(n){return /(^|\/)doc\.kml$/i.test(n)})[0]||nm[0];
+      return z.files[p].async("string");
+    }).then(function(t){$("kt").value=t;parseKml(t)}).catch(function(){st.textContent="KMZ خوانده نشد یا KML داخل آن پیدا نشد."});
+  }else{var r=new FileReader();r.onload=function(){$("kt").value=r.result;parseKml(r.result)};r.readAsText(f)}
+});
+$("kt").addEventListener("input",function(){parseKml(this.value)});
+$("lat").addEventListener("input",manual);$("lon").addEventListener("input",manual);
+$("geo").onclick=function(){
+  try{navigator.geolocation.getCurrentPosition(function(p){$("lat").value=p.coords.latitude.toFixed(6);$("lon").value=p.coords.longitude.toFixed(6);show([[p.coords.latitude,p.coords.longitude]],"موقعیت فعلی (دقت حدود "+Math.round(p.coords.accuracy)+" متر)")},function(){alert("دسترسی به موقعیت ممکن نشد؛ مختصات را دستی وارد کنید.")})}catch(e){alert("موقعیت‌یابی در دسترس نیست؛ مختصات را دستی وارد کنید.")}
+};
+$("cp").onclick=function(){
+  function fb(){var t=document.createElement("textarea");t.value=epsg;document.body.appendChild(t);t.select();try{document.execCommand("copy")}catch(e){}document.body.removeChild(t)}
+  try{navigator.clipboard.writeText(epsg).catch(fb)}catch(e){fb()}
+  $("cp").textContent="کپی شد ✔";setTimeout(function(){$("cp").textContent="کپی کد EPSG"},1500);
+};
+try{var gl=JSON.parse(localStorage.getItem("pg-geo-last")||"null");if(gl&&isFinite(parseFloat(gl[0]))&&isFinite(parseFloat(gl[1]))&&!$("lat").value&&!$("lon").value){$("lat").value=parseFloat(gl[0]);$("lon").value=parseFloat(gl[1]);$("gln").hidden=false;manual()}}catch(e){}
+</script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مبدل مختصات و فرمت‌کننده GCP</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#d9dde3;--ac:#1d6fe0;--ok:#16794a;--wr:#b45309;--er:#b42318;--res:#eaf2fd;--band:rgba(22,121,74,.18)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e;--band:rgba(76,195,138,.2)}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2127;--tx:#eceef1;--mut:#9aa3af;--bd:#343a43;--ac:#5b9bf5;--ok:#4cc38a;--wr:#f0a04b;--er:#f97066;--res:#1c2a3e;--band:rgba(76,195,138,.2)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn",Tahoma,sans-serif;line-height:1.7}
+.w{max-width:680px;margin:0 auto;padding:16px}
+h1{font-size:1.2rem;margin:4px 0 12px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.res{background:var(--res);border-color:var(--ac)}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+select,input,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+textarea{direction:ltr;font-family:ui-monospace,Consolas,monospace;font-size:.82rem}
+.r{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
+.g div{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px}
+.g b{display:block;font-size:1.2rem;direction:ltr}
+.g span{font-size:.78rem;color:var(--mut)}
+.n{font-size:.8rem;color:var(--mut);margin-top:6px}
+.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.9rem}
+.chk input{width:18px;height:18px}
+button.b{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer;width:100%;margin-top:8px}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+ul{margin:10px 0 0;padding-inline-start:20px;font-size:.9rem}
+.ok{color:var(--ok)}.wr{color:var(--wr)}.er{color:var(--er)}
+table{width:100%;border-collapse:collapse;font-size:.8rem;direction:ltr}
+td,th{border:1px solid var(--bd);padding:3px 6px;text-align:left}
+.sc{overflow-x:auto}
+[hidden]{display:none!important}
+</style>
+<script src="lib/jszip.min.js"></script>
+</head>
+<body>
+<div class="w">
+<h1>مبدل مختصات و فرمت‌کننده GCP برای Metashape</h1>
+
+<div class="c">
+<label>ورود فایل: KML، KMZ، CSV، TXT، TSV، GPX، GeoJSON، XLSX و فایل‌های متنی مشابه</label>
+<input id="ff" type="file" accept=".kml,.kmz,.csv,.txt,.tsv,.xyz,.pts,.dat,.asc,.gpx,.geojson,.json,.xlsx,.xls,text/*">
+<div class="n" id="fs">یا مختصات را در کادر پایین بچسبانید یا تایپ کنید؛ سیستم مختصات خودکار تشخیص داده می‌شود.</div>
+<label>موقعیت تقریبی پروژه (اختیاری — برای تشخیص زون UTM)</label>
+<div class="r"><input id="hp" placeholder="lat, lon  مثال: 35.7, 51.4" style="direction:ltr"><button class="b" id="hg" style="margin:0">موقعیت من</button></div>
+<div class="n" id="hpn" hidden>از آخرین نقطه‌ی «بررسی حریم هوایی» پر شد؛ در صورت نیاز تغییر دهید.</div>
+</div>
+
+<div class="c">
+<label>مختصات (هر خط یک نقطه؛ جداکننده: ویرگول، تب، سمی‌کالن یا فاصله)</label>
+<textarea id="inp" rows="6" placeholder="GCP1, 35.700000, 51.400000, 1180.5&#10;GCP2, 35.701200, 51.401500, 1182.1"></textarea>
+<div class="chk"><input type="checkbox" id="nm" checked><label for="nm" style="margin:0;color:var(--tx)">ستون اول نام نقطه است (خودکار تشخیص داده می‌شود)</label></div>
+<div class="chk"><input type="checkbox" id="hd"><label for="hd" style="margin:0;color:var(--tx)">خط اول سرستون است (خودکار تشخیص داده می‌شود)</label></div>
+<div class="r">
+<div><label>سیستم ورودی</label><select id="ci"><option value="auto">تشخیص خودکار</option><option value="ll">WGS84 (lat, lon)</option><option value="ln">WGS84 (lon, lat)</option><option value="utm">WGS84 / UTM (E, N)</option><option value="utmNE">WGS84 / UTM (N, E)</option><option value="wm">Web Mercator (EPSG:3857)</option></select></div>
+<div><label>سیستم خروجی</label><select id="co"><option value="utm">WGS84 / UTM (E, N)</option><option value="ll">WGS84 (lat, lon)</option><option value="ln">WGS84 (lon, lat)</option></select></div>
+<div id="uzw"><label>زون UTM ورودی (اگر خودکار تعیین نشد)</label><input id="uz" type="number" value="39" min="1" max="60"></div>
+<div id="uhw"><label>نیمکره‌ی ورودی</label><select id="uh"><option value="N">شمالی</option><option value="S">جنوبی</option></select></div>
+<div><label>زون UTM خروجی (خالی = خودکار)</label><input id="oz" type="number" min="1" max="60" placeholder="خودکار"></div>
+<div><label>تبدیل ارتفاع</label><select id="hm"><option value="0">بدون تغییر</option><option value="1">ژئوئید ← بیضوی (h = H + N)</option><option value="2">بیضوی ← ژئوئید (H = h − N)</option></select></div>
+<div><label>ناهنجاری ژئوئید N (m)</label><input id="gn" type="number" step="any" value="0"></div>
+<div><label>جداکننده‌ی خروجی</label><select id="ds"><option value=",">ویرگول (CSV)</option><option value="&#9;">تب</option></select></div>
+</div>
+<div class="chk"><input type="checkbox" id="ah"><label for="ah" style="margin:0;color:var(--tx)">سرستون در خروجی</label></div>
+<div class="chk"><input type="checkbox" id="ac"><label for="ac" style="margin:0;color:var(--tx)">افزودن ستون دقت (متر) برای Import در Metashape</label></div>
+<div class="r" id="acw" hidden>
+<div><label>دقت افقی (m)</label><input id="axy" type="number" step="any" value="0.02"></div>
+<div><label>دقت ارتفاعی (m)</label><input id="az" type="number" step="any" value="0.03"></div>
+</div>
+</div>
+
+<div class="c res">
+<div class="n" id="det" style="margin:0 0 4px;color:var(--tx)"></div>
+<div class="n" id="st1" style="margin:0 0 8px"></div>
+<textarea id="out" rows="8" readonly></textarea>
+<button class="b p" id="cp">کپی خروجی</button>
+<div id="exp" hidden>
+<label>ذخیره‌ی خروجی به‌صورت فایل</label>
+<input id="fn" type="text" value="gcp_points" style="direction:ltr">
+<div class="r">
+<button class="b" data-f="csv">CSV</button><button class="b" data-f="txt">TXT</button>
+<button class="b" data-f="kml">KML</button><button class="b" data-f="json">GeoJSON</button>
+<button class="b" data-f="xlsx">Excel (XLSX)</button>
+</div>
+<div class="n" id="xs"></div>
+<div class="n">KML و GeoJSON همیشه با مختصات WGS84 (lon, lat) ذخیره می‌شوند، مستقل از سیستم خروجی انتخابی. CSV و TXT از سرستون و جداکننده‌ی انتخابی پیروی می‌کنند (CSV با ویرگول، TXT با تب). در اپ اندروید پس از ساخت فایل، برگه‌ی اشتراک‌گذاری باز می‌شود.</div>
+</div>
+<div class="sc" style="margin-top:10px"><table id="tb"></table></div>
+<ul id="m2"></ul>
+</div>
+<div class="n">تشخیص خودکار بر پایه‌ی ساختار فایل، نام ستون‌ها، کد EPSG یا متن «UTM zone» داخل فایل و دامنه‌ی مقادیر انجام می‌شود. زون UTM را از روی اعداد نمی‌توان فهمید؛ برای تعیین قطعی آن موقعیت تقریبی پروژه را وارد کنید. فقط WGS84 پشتیبانی می‌شود (دیتوم‌های محلی یا تبدیل هفت‌پارامتری شامل نیست) و مقدار N ژئوئید را از مدل ژئوئید محل پروژه وارد کنید.</div>
+</div>
+
+<script>
+var $=function(i){return document.getElementById(i)},R=Math.PI/180;
+var a=6378137,f=1/298.257223563,k0=0.9996,n=f/(2-f),A=a/(1+n)*(1+n*n/4+Math.pow(n,4)/64);
+var al=[n/2-2*n*n/3+5*Math.pow(n,3)/16,13*n*n/48-3*Math.pow(n,3)/5,61*Math.pow(n,3)/240];
+var be=[n/2-2*n*n/3+37*Math.pow(n,3)/96,n*n/48+Math.pow(n,3)/15,17*Math.pow(n,3)/480];
+var de=[2*n-2*n*n/3-2*Math.pow(n,3),7*n*n/3-8*Math.pow(n,3)/5,56*Math.pow(n,3)/15];
+function fwd(lat,lon,zone){
+  var l0=((zone-1)*6-180+3)*R,p=lat*R,dl=lon*R-l0,sp=Math.sin(p),c=2*Math.sqrt(n)/(1+n);
+  var t=Math.sinh(Math.atanh(sp)-c*Math.atanh(c*sp)),xi=Math.atan2(t,Math.cos(dl)),eta=Math.atanh(Math.sin(dl)/Math.sqrt(1+t*t));
+  var X=xi,E=eta,j;for(j=1;j<=3;j++){X+=al[j-1]*Math.sin(2*j*xi)*Math.cosh(2*j*eta);E+=al[j-1]*Math.cos(2*j*xi)*Math.sinh(2*j*eta)}
+  var N=k0*A*X;if(lat<0)N+=1e7;return{e:500000+k0*A*E,n:N};
+}
+function inv(E,N,zone,south){
+  var xi=(south?N-1e7:N)/(k0*A),eta=(E-500000)/(k0*A),x1=xi,e1=eta,j;
+  for(j=1;j<=3;j++){x1-=be[j-1]*Math.sin(2*j*xi)*Math.cosh(2*j*eta);e1-=be[j-1]*Math.cos(2*j*xi)*Math.sinh(2*j*eta)}
+  var chi=Math.asin(Math.sin(x1)/Math.cosh(e1)),p=chi;for(j=1;j<=3;j++)p+=de[j-1]*Math.sin(2*j*chi);
+  var l=((zone-1)*6-180+3)*R+Math.atan2(Math.sinh(e1),Math.cos(x1));
+  return{lat:p/R,lon:l/R};
+}
+function zoneOf(lon){return Math.min(60,Math.max(1,Math.floor((lon+180)/6)+1))}
+function wm2ll(x,y){return{lon:x/6378137/R,lat:(2*Math.atan(Math.exp(y/6378137))-Math.PI/2)/R}}
+function hav(a1,o1,a2,o2){var dA=(a2-a1)*R,dO=(o2-o1)*R,h=Math.pow(Math.sin(dA/2),2)+Math.cos(a1*R)*Math.cos(a2*R)*Math.pow(Math.sin(dO/2),2);return 12742*Math.asin(Math.sqrt(h))}
+
+/* ---------- text helpers ---------- */
+var fileHint=null,fileSrc="",NUM=/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i;
+function isN(x){return NUM.test(x)}
+function toks(s){var t=/[,;\t]/.test(s)?s.split(/[,;\t]+/):s.trim().split(/\s+/);return t.map(function(x){return x.trim()}).filter(function(x){return x!==""})}
+function lines(t){return t.split(/\r?\n/).map(function(s){return s.trim()}).filter(function(s){return s&&!/^(#|\/\/)/.test(s)})}
+function autoLayout(){
+  var L=lines($("inp").value);if(!L.length)return;
+  var t0=toks(L[0]),hd=false;
+  if(L.length>1&&t0.length>=2&&t0.filter(isN).length<2&&toks(L[1]).filter(isN).length>=2)hd=true;
+  var dr=toks(L[hd?1:0]||"");
+  $("hd").checked=hd;$("nm").checked=dr.length>=4||(dr.length>0&&!isN(dr[0]));
+}
+function parse(){
+  var L=lines($("inp").value),hdr=null,hint="",off=$("nm").checked?1:0,ix={nm:off?0:-1,a:off,b:off+1,h:off+2};
+  if($("hd").checked&&L.length){
+    hdr=toks(L.shift()).map(function(s){return s.toLowerCase().replace(/[^a-z0-9_]/g,"")});
+    var g=function(re){return hdr.findIndex(function(h){return re.test(h)})};
+    var la=g(/^(lat|latitude)$/),lo=g(/^(lon|lng|long|longitude)$/),e=g(/^(e|east|easting|eastings)$/),nn=g(/^(n|north|northing|northings)$/),x=g(/^(x|xcoord)$/),y=g(/^(y|ycoord)$/);
+    var nmI=g(/^(name|label|id|point|pt|pointid|gcp|station|no)$/),hI=g(/^(z|alt|altitude|height|elev|elevation|h|ele)$/);
+    if(la>=0&&lo>=0){ix={nm:nmI,a:Math.min(la,lo),b:Math.max(la,lo),h:hI};hint=la<lo?"ll":"ln"}
+    else if(e>=0&&nn>=0){ix={nm:nmI,a:Math.min(e,nn),b:Math.max(e,nn),h:hI};hint=e<nn?"utm":"utmNE"}
+    else if(x>=0&&y>=0){ix={nm:nmI,a:x,b:y,h:hI};hint="xy"}
+  }
+  var recs=L.map(function(s,i){
+    var t=toks(s);
+    return{nm:ix.nm>=0&&t[ix.nm]?t[ix.nm]:"P"+(i+1),a:parseFloat(t[ix.a]),b:parseFloat(t[ix.b]),h:ix.h>=0&&t[ix.h]!==undefined?parseFloat(t[ix.h]):NaN};
+  });
+  return{recs:recs,hint:hint};
+}
+function detect(P){
+  var Rr=P.recs.filter(function(r){return isFinite(r.a)&&isFinite(r.b)});
+  if(!Rr.length)return null;
+  var txt=$("inp").value,m,z=0,s="";
+  if(m=txt.match(/EPSG\s*[:=]?\s*(\d{4,5})/i)){var e=+m[1];if(e>=32601&&e<=32660){z=e-32600;s="N"}else if(e>=32701&&e<=32760){z=e-32700;s="S"}}
+  if(!z&&(m=txt.match(/UTM[^0-9\n]{0,20}(\d{1,2})\s*([NS])?\b/i))&&+m[1]>=1&&+m[1]<=60){z=+m[1];s=m[2]?m[2].toUpperCase():""}
+  var d=function(c,conf,why){return{c:c,z:z,s:s,conf:conf,why:why}};
+  if(fileHint)return d(fileHint,"بالا","ساختار فایل "+fileSrc+" — مختصات WGS84");
+  var A_=Rr.map(function(r){return r.a}),B_=Rr.map(function(r){return r.b});
+  var all=function(arr,fn){return arr.every(fn)};
+  var gLL=all(A_,function(v){return Math.abs(v)<=90})&&all(B_,function(v){return Math.abs(v)<=180});
+  var gLN=all(A_,function(v){return Math.abs(v)<=180})&&all(B_,function(v){return Math.abs(v)<=90});
+  var pEN=all(A_,function(v){return v>=1e5&&v<=1e6})&&all(B_,function(v){return v>=0&&v<=1.0001e7});
+  var pNE=all(B_,function(v){return v>=1e5&&v<=1e6})&&all(A_,function(v){return v>=0&&v<=1.0001e7});
+  var wm=all(A_,function(v){return Math.abs(v)<=20037509})&&all(B_,function(v){return Math.abs(v)<=20037509})&&A_.concat(B_).some(function(v){return Math.abs(v)>1e6});
+  if(P.hint==="ll"&&gLL)return d("ll","بالا","نام ستون‌ها: lat قبل از lon");
+  if(P.hint==="ln"&&gLN)return d("ln","بالا","نام ستون‌ها: lon قبل از lat");
+  if(P.hint==="utm"&&pEN)return d("utm","بالا","نام ستون‌ها: Easting/Northing و دامنه‌ی مقادیر UTM");
+  if(P.hint==="utmNE"&&pNE)return d("utmNE","بالا","نام ستون‌ها: Northing قبل از Easting");
+  if(gLL&&gLN)return d("ll","متوسط","همه‌ی مقادیر ≤ ۹۰ هستند؛ ترتیب lat, lon فرض شد — در صورت اشتباه دستی انتخاب کنید");
+  if(gLL)return d("ll","بالا","مقادیر ستون اول در بازه‌ی عرض و ستون دوم تا ۱۸۰ (lat, lon)");
+  if(gLN)return d("ln","بالا","مقادیر ستون اول تا ۱۸۰ و ستون دوم ≤ ۹۰ (lon, lat)");
+  if(pEN&&!pNE)return d("utm","بالا","ستون اول در بازه‌ی Easting (۱۰۰ هزار تا ۱ میلیون) و ستون دوم در بازه‌ی Northing");
+  if(pNE&&!pEN)return d("utmNE","بالا","ستون اول Northing و ستون دوم Easting");
+  if(pEN&&pNE)return d("utm","متوسط","ترتیب Easting, Northing فرض شد");
+  if(wm)return d("wm","متوسط","مقادیر بزرگ در بازه‌ی Web Mercator");
+  return d("ll","ناموفق","الگوی شناخته‌شده‌ای پیدا نشد");
+}
+var NAMES={ll:"WGS84 (lat, lon)",ln:"WGS84 (lon, lat)",utm:"WGS84 / UTM (E, N)",utmNE:"WGS84 / UTM (N, E)",wm:"Web Mercator (EPSG:3857)"};
+function hintPos(){var t=($("hp").value||"").split(/[\s,;]+/).map(parseFloat);return(isFinite(t[0])&&isFinite(t[1])&&Math.abs(t[0])<=90&&Math.abs(t[1])<=180)?t:null}
+
+var lastHd=[],lastRows=[],lastPts=[];
+function conv(){
+  var P=parse(),D=detect(P),sel=$("ci").value,co=$("co").value,msgs=[],bad=0;
+  var ce=sel==="auto"?(D?D.c:"ll"):sel;
+  var det=$("det");
+  det.textContent=sel==="auto"?(D?"تشخیص خودکار: "+NAMES[ce]+" — اطمینان "+D.conf+" ("+D.why+")":"داده‌ای برای تشخیص وجود ندارد."):"سیستم ورودی دستی: "+NAMES[ce];
+  if(D&&sel==="auto"&&(D.conf==="متوسط"||D.conf==="ناموفق"))msgs.push('<li class="'+(D.conf==="ناموفق"?"er":"wr")+'">'+(D.conf==="ناموفق"?"سیستم مختصات تشخیص داده نشد؛ از «سیستم ورودی» انتخاب دستی کنید.":"تشخیص قطعی نیست؛ نتیجه را بررسی کنید.")+'</li>');
+  var isU=ce==="utm"||ce==="utmNE";
+  $("uzw").hidden=$("uhw").hidden=!isU;$("acw").hidden=!$("ac").checked;
+  var uz=+$("uz").value||39,uh=$("uh").value==="S";
+  if(isU){
+    var r0=P.recs.filter(function(r){return isFinite(r.a)&&isFinite(r.b)})[0],hp=hintPos();
+    if(r0){
+      var E0=ce==="utm"?r0.a:r0.b,N0=ce==="utm"?r0.b:r0.a;
+      if(sel==="auto"&&D&&D.z){uz=D.z;if(D.s)uh=D.s==="S";msgs.push('<li>زون UTM از متن/کد EPSG فایل خوانده شد: <b>'+uz+(uh?"S":"N")+'</b>.</li>')}
+      else if(hp){
+        var best=null;
+        for(var zz=1;zz<=60;zz++)[false,true].forEach(function(sh){var q=inv(E0,N0,zz,sh);if(Math.abs(q.lat)>84)return;var dd=hav(q.lat,q.lon,hp[0],hp[1]);if(!best||dd<best.d)best={z:zz,s:sh,d:dd}});
+        if(best){uz=best.z;uh=best.s;msgs.push('<li class="'+(best.d<300?"ok":"wr")+'">زون از موقعیت تقریبی تعیین شد: <b>'+uz+(uh?"S":"N")+'</b> (فاصله‌ی نقطه تا موقعیت: '+best.d.toFixed(0)+' km)'+(best.d<300?"":" — فاصله زیاد است؛ مختصات یا موقعیت را بررسی کنید")+'.</li>')}
+      }else msgs.push('<li class="wr">زون UTM از روی اعداد قابل تشخیص نیست؛ زون وارد‌شده ('+uz+(uh?"S":"N")+') استفاده شد. موقعیت تقریبی پروژه را وارد کنید تا خودکار تعیین شود.</li>');
+      $("uz").value=uz;$("uh").value=uh?"S":"N";
+    }
+  }
+  var hmode=+$("hm").value,gn=+$("gn").value||0,sep=$("ds").value;
+  var pts=P.recs.map(function(p){
+    var lat,lon;
+    if(!isFinite(p.a)||!isFinite(p.b)){bad++;return null}
+    if(ce==="ll"){lat=p.a;lon=p.b}else if(ce==="ln"){lon=p.a;lat=p.b}
+    else if(ce==="wm"){var w=wm2ll(p.a,p.b);lat=w.lat;lon=w.lon}
+    else{var q=ce==="utm"?inv(p.a,p.b,uz,uh):inv(p.b,p.a,uz,uh);lat=q.lat;lon=q.lon}
+    if(!isFinite(lat)||!isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){bad++;return null}
+    var h=p.h;if(isFinite(h)){if(hmode==1)h=h+gn;else if(hmode==2)h=h-gn}
+    return{nm:p.nm,lat:lat,lon:lon,h:h};
+  }).filter(Boolean);
+  var oz=+$("oz").value||(pts.length?zoneOf(pts[0].lon):39);
+  var out=[],tb='',zs={},hd=co==="utm"?["Label","Easting","Northing","Altitude"]:co==="ll"?["Label","Latitude","Longitude","Altitude"]:["Label","Longitude","Latitude","Altitude"];
+  if($("ac").checked)hd=hd.concat(["Accuracy_XY","Accuracy_Z"]);
+  lastHd=hd;lastRows=[];lastPts=pts;
+  if($("ah").checked)out.push(hd.join(sep));
+  tb='<tr>'+hd.map(function(x){return'<th>'+x+'</th>'}).join("")+'</tr>';
+  pts.forEach(function(p,i){
+    var c1,c2;
+    if(co==="utm"){var u=fwd(p.lat,p.lon,oz);c1=u.e.toFixed(3);c2=u.n.toFixed(3);zs[zoneOf(p.lon)]=1}
+    else if(co==="ll"){c1=p.lat.toFixed(8);c2=p.lon.toFixed(8)}else{c1=p.lon.toFixed(8);c2=p.lat.toFixed(8)}
+    var row=[p.nm,c1,c2,isFinite(p.h)?p.h.toFixed(3):""];if($("ac").checked)row=row.concat([$("axy").value,$("az").value]);
+    out.push(row.join(sep));lastRows.push(row);
+    if(i<200)tb+='<tr>'+row.map(function(x){return'<td>'+x+'</td>'}).join("")+'</tr>';
+  });
+  $("out").value=out.join("\n");$("tb").innerHTML=tb;
+  $("st1").textContent=pts.length+" نقطه تبدیل شد"+(bad?" — "+bad+" خط نامعتبر نادیده گرفته شد":"")+(co==="utm"?" — زون خروجی: "+oz:"")+(pts.length>200?" — جدول فقط ۲۰۰ ردیف اول را نشان می‌دهد":"");
+  if(co==="utm"&&Object.keys(zs).length>1)msgs.push('<li class="wr">نقاط در بیش از یک زون UTM قرار دارند ('+Object.keys(zs).join("، ")+')؛ همه با زون '+oz+' تبدیل شدند. برای دقت بالا زون واحد انتخاب کنید.</li>');
+  if(hmode&&!gn)msgs.push('<li class="wr">تبدیل ارتفاع فعال است ولی N برابر صفر است؛ ناهنجاری ژئوئید محل را وارد کنید.</li>');
+  if(pts.length&&pts.some(function(p){return !isFinite(p.h)}))msgs.push('<li class="wr">بعضی نقاط ارتفاع ندارند؛ ستون Altitude آن‌ها خالی است.</li>');
+  if(pts.length)msgs.push('<li>در Metashape: File → Import → Import Reference؛ ستون‌ها را مطابق سرستون، دیلیمیتر و سیستم مختصات خروجی تنظیم کنید.</li>');
+  $("m2").innerHTML=msgs.join("");
+}
+
+/* ---------- file readers ---------- */
+function cl(s){return String(s||"").replace(/[,;\t\r\n]+/g," ").trim()}
+function setText(t,hint,src){fileHint=hint;fileSrc=src;$("inp").value=t;autoLayout();conv()}
+function fromKml(s){
+  var d=new DOMParser().parseFromString(s,"text/xml"),out=[],pm=d.getElementsByTagName("Placemark"),c=0;
+  function add(nm,co){var cs=co.textContent.trim().split(/\s+/).map(function(x){return x.split(",").map(parseFloat)}).filter(function(q){return isFinite(q[0])&&isFinite(q[1])});
+    cs.forEach(function(q,i){c++;var n=cs.length>1?(cl(nm)||"P")+"_"+(i+1):(cl(nm)||"P"+c);out.push([n,q[0],q[1],isFinite(q[2])?q[2]:""].join(","))})}
+  if(pm.length)[].forEach.call(pm,function(p){var nE=p.getElementsByTagName("name")[0],nm=nE?nE.textContent:"";[].forEach.call(p.getElementsByTagName("coordinates"),function(co){add(nm,co)})});
+  else[].forEach.call(d.getElementsByTagName("coordinates"),function(co){add("",co)});
+  setText(out.join("\n"),"ln","KML");
+}
+function fromGpx(s){
+  var d=new DOMParser().parseFromString(s,"text/xml"),out=[],c=0;
+  ["wpt","rtept","trkpt"].forEach(function(tag){[].forEach.call(d.getElementsByTagName(tag),function(p){c++;var nE=p.getElementsByTagName("name")[0],eE=p.getElementsByTagName("ele")[0];
+    out.push([cl(nE?nE.textContent:"")||"P"+c,p.getAttribute("lat"),p.getAttribute("lon"),eE?eE.textContent:""].join(","))})});
+  setText(out.join("\n"),"ll","GPX");
+}
+function fromGeo(j){
+  var out=[],c=0;
+  function walk(g,nm){if(!g)return;
+    if(g.type==="Point"){c++;out.push([cl(nm)||"P"+c,g.coordinates[0],g.coordinates[1],g.coordinates[2]!==undefined?g.coordinates[2]:""].join(","))}
+    else if(g.type==="GeometryCollection")g.geometries.forEach(function(x){walk(x,nm)});
+    else if(g.coordinates){(function rec(a){if(typeof a[0]==="number"){c++;out.push([cl(nm)||"P"+c,a[0],a[1],a[2]!==undefined?a[2]:""].join(","))}else a.forEach(rec)})(g.coordinates)}}
+  var F=j.type==="FeatureCollection"?j.features:j.type==="Feature"?[j]:[{geometry:j,properties:{}}];
+  F.forEach(function(ft){var p=ft.properties||{};walk(ft.geometry,p.name||p.Name||p.label||p.id||p.ID||"")});
+  setText(out.join("\n"),"ln","GeoJSON");
+}
+function handleText(t){
+  var s=t.replace(/^\uFEFF/,"");
+  try{
+    if(/<kml[\s>]/i.test(s))return fromKml(s);
+    if(/<gpx[\s>]/i.test(s))return fromGpx(s);
+    if(/^\s*[\[{]/.test(s))return fromGeo(JSON.parse(s));
+  }catch(e){}
+  setText(s,null,"");
+}
+$("ff").addEventListener("change",function(){
+  var f=this.files[0];if(!f)return;var nm=f.name.toLowerCase(),st=$("fs");
+  function ok(){st.textContent=f.name+" بارگذاری شد"}
+  function err(){st.textContent="خواندن فایل ممکن نشد؛ فرمت یا کتابخانه‌ی لازم در دسترس نیست."}
+  if(/\.kmz$/.test(nm)){
+    if(typeof JSZip==="undefined")return err();
+    f.arrayBuffer().then(function(b){return JSZip.loadAsync(b)}).then(function(z){
+      var k=Object.keys(z.files).filter(function(x){return /\.kml$/i.test(x)&&!z.files[x].dir});if(!k.length)throw 0;
+      var p=k.filter(function(x){return /(^|\/)doc\.kml$/i.test(x)})[0]||k[0];return z.files[p].async("string");
+    }).then(function(t){handleText(t);ok()}).catch(err);
+  }else if(/\.xlsx?$/.test(nm)){
+    needXlsx().then(function(){return f.arrayBuffer()}).then(function(b){var wb=XLSX.read(b,{type:"array"});handleText(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]));ok()}).catch(err);
+  }else{var r=new FileReader();r.onload=function(){handleText(r.result);ok()};r.onerror=err;r.readAsText(f)}
+});
+$("inp").addEventListener("input",function(){
+  var v=this.value;
+  if(/^\s*(<|[\[{])/.test(v)){handleText(v);return}
+  fileHint=null;fileSrc="";autoLayout();conv();
+});
+$("hg").onclick=function(){
+  try{navigator.geolocation.getCurrentPosition(function(p){$("hp").value=p.coords.latitude.toFixed(4)+", "+p.coords.longitude.toFixed(4);conv()},function(){alert("دسترسی به موقعیت ممکن نشد؛ مختصات را دستی وارد کنید.")})}catch(e){alert("موقعیت‌یابی در دسترس نیست.")}
+};
+/* ---------- file export ---------- */
+function needXlsx(){
+  if(typeof XLSX!=="undefined")return Promise.resolve();
+  return new Promise(function(res,rej){var s=document.createElement("script");s.src="lib/xlsx.full.min.js";s.onload=res;s.onerror=function(){rej({code:"nolib"})};document.head.appendChild(s)});
+}
+/* saving: inside the app the parent page shows the share sheet (Android) or downloads the file (web) */
+var MIME={csv:"text/csv",txt:"text/plain",kml:"application/vnd.google-earth.kml+xml",json:"application/geo+json",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"};
+function saveFile(name,data){
+  var ext=name.split(".").pop().toLowerCase(),blob=data instanceof Blob?data:new Blob([data],{type:(MIME[ext]||"text/plain")+";charset=utf-8"});
+  if(window.parent&&window.parent!==window){window.parent.postMessage({pgSave:true,name:name,blob:blob},location.origin==="null"?"*":location.origin);return Promise.resolve()}
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000);return Promise.resolve();
+}
+var dl={save:function(o){return saveFile(o.filename,o.data)}};
+$("exp").hidden=false;
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function mk(kind){
+  var base=($("fn").value||"gcp_points").replace(/[\\\/:*?"<>|\s]+/g,"_"),hdr=$("ah").checked?[lastHd]:[],all=hdr.concat(lastRows);
+  if(kind==="csv")return{n:base+".csv",d:all.map(function(r){return r.join(",")}).join("\n")};
+  if(kind==="txt")return{n:base+".txt",d:all.map(function(r){return r.join("\t")}).join("\n")};
+  if(kind==="json"){
+    var fc={type:"FeatureCollection",features:lastPts.map(function(p){return{type:"Feature",properties:{name:p.nm,altitude:isFinite(p.h)?+p.h.toFixed(3):null},geometry:{type:"Point",coordinates:isFinite(p.h)?[+p.lon.toFixed(8),+p.lat.toFixed(8),+p.h.toFixed(3)]:[+p.lon.toFixed(8),+p.lat.toFixed(8)]}}})};
+    return{n:base+".json",d:JSON.stringify(fc,null,1)};
+  }
+  if(kind==="kml"){
+    var k='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>'+esc(base)+'</name>\n'+lastPts.map(function(p){return'<Placemark><name>'+esc(p.nm)+'</name><Point><coordinates>'+p.lon.toFixed(8)+','+p.lat.toFixed(8)+(isFinite(p.h)?','+p.h.toFixed(3):'')+'</coordinates></Point></Placemark>'}).join("\n")+'\n</Document></kml>';
+    return{n:base+".kml",d:k};
+  }
+  return needXlsx().then(function(){
+  var ws=XLSX.utils.aoa_to_sheet([lastHd].concat(lastRows.map(function(r){return r.map(function(v,i){return i>0&&v!==""&&isFinite(+v)?+v:v})}))),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"GCP");
+  return{n:base+".xlsx",d:new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})],{type:MIME.xlsx})};
+  });
+}
+[].forEach.call(document.querySelectorAll("[data-f]"),function(b){b.onclick=function(){
+  var xs=$("xs");
+  if(!lastPts.length){xs.textContent="نقطه‌ای برای ذخیره وجود ندارد.";return}
+  Promise.resolve().then(function(){return mk(b.dataset.f)}).then(function(o){return dl.save({filename:o.n,data:o.d})}).then(function(){xs.textContent="ذخیره شد ✔"}).catch(function(e){
+    var c=e&&e.code;xs.textContent=c==="declined"?"ذخیره لغو شد.":c==="nolib"?"کتابخانه‌ی لازم برای این فرمت بارگذاری نشد.":"ذخیره‌ی فایل ممکن نشد ("+(c||"خطا")+")؛ از دکمه‌ی کپی استفاده کنید."});
+}});
+$("cp").onclick=function(){
+  var t=$("out").value;
+  function fb(){$("out").select();try{document.execCommand("copy")}catch(e){}}
+  try{navigator.clipboard.writeText(t).catch(fb)}catch(e){fb()}
+  $("cp").textContent="کپی شد ✔";setTimeout(function(){$("cp").textContent="کپی خروجی"},1500);
+};
+["nm","hd","ci","co","uz","uh","oz","hm","gn","ds","ah","ac","axy","az","hp"].forEach(function(i){$(i).addEventListener("input",conv);$(i).addEventListener("change",conv)});
+try{var gl=JSON.parse(localStorage.getItem("pg-geo-last")||"null");if(gl&&isFinite(parseFloat(gl[0]))&&isFinite(parseFloat(gl[1]))&&!$("hp").value){$("hp").value=parseFloat(gl[0])+", "+parseFloat(gl[1]);$("hpn").hidden=false}}catch(e){}
+conv();
+</script>
+</body>
+</html>
